@@ -40,6 +40,7 @@
 #include "EntryPoints.h"
 #include "EZTWAIN.h" // REB 6/23/09 #14151
 #include "TWAIN.h" // REB 6/23/09 #14151
+#include "utilities.h" // REB 3/28/11 #25290
 
 char	g_methodText[255]; // holds method name to execute on tool tip action
 char	intrProcStr1[MAX_PATH], intrProcStr2[MAX_PATH];
@@ -50,7 +51,7 @@ BOOL	g_FolderSelected;  // MJG 6/15/05
 char pathName[512]; // MWD 10/21/05 #9246 holds path to Win32API.4DX
 LPCWSTR KEY_DisableTaskMgr = "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System";
 LPCWSTR VAL_DisableTaskMgr = "DisableTaskMgr";
-long	windowStyle = 0; // REB 3/11/10 #23109 To hold the default window style.
+LONG_PTR	windowStyle = 0; // REB 3/11/10 #23109 To hold the default window style.
 
 struct		HOOKHANDLES
 {
@@ -84,15 +85,15 @@ struct		PROCESSHANDLES
 	WNDPROC		wpProToolsOrigProc; // used for subclassing ALL 4D windows
 } processHandles;
 
-int				FD_Flags; // used for open file dialog
-int				g_intrProcMsg = PS_IDLE;
+INT_PTR				FD_Flags; // used for open file dialog
+INT_PTR				g_intrProcMsg = PS_IDLE;
 
 struct		PRINTSETTINGS
 {
 	char		printerSelection[80];
 	char		size[80];
 	char		source[80];
-	long		portraitLandscape;
+	LONG_PTR		portraitLandscape;
 	char		copies[10];
 	BOOL		printPreview;
 	BOOL		printToFile;
@@ -124,21 +125,21 @@ typedef struct _REG_TZI_FORMAT
 
 extern struct		TOOLBARRESTRICT
 {
-	long		toolBarOnDeck;
-	long		top;
-	long		left;
-	long		right;
-	long		bottom;
-	int			topProcessNbr;
-	int			leftProcessNbr;
-	int			rightProcessNbr;
-	int			bottomProcessNbr;
-	long		trackingRestriction;
-	long		appBeingMaxed;
-	long		appWindowState;
+	LONG_PTR		toolBarOnDeck;
+	LONG_PTR		top;
+	LONG_PTR		left;
+	LONG_PTR		right;
+	LONG_PTR		bottom;
+	INT_PTR			topProcessNbr;
+	INT_PTR			leftProcessNbr;
+	INT_PTR			rightProcessNbr;
+	INT_PTR			bottomProcessNbr;
+	LONG_PTR		trackingRestriction;
+	LONG_PTR		appBeingMaxed;
+	LONG_PTR		appWindowState;
 	RECT		origWindowRect;
-	long		clientOffsetx;
-	long		clientOffsety;
+	LONG_PTR		clientOffsetx;
+	LONG_PTR		clientOffsety;
 	char		minimizedWindows[SMLBUF][SMLBUF]; // REB 8/11/08 #16207 
 	RECT		previousWindowRect; // REB 3/26/10
 } toolBarRestrictions;
@@ -162,24 +163,38 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 #endif
 #endif
 
-void PluginMain( long selector, PA_PluginParameters params )
+
+void PluginMain( LONG_PTR selector, PA_PluginParameters params )
 {
 
 	HWND				hWnd;
+	PA_Unistring		Unistring;
+	char				*pathName, *charPos;
 
 	switch( selector )
 	{
 // --- Win32API Commands
+
 
 		case kInitPlugin :
 
 			// get MDI & parent window on init 4/15/02
 			// REB 2/20/09 #19122 Use new method to get handles.  PA_GetHWND(0) does not work in v11 like it did in previous version.
 			// REB 3/24/10 It appears that PA_GetHWND(0) works again, at least in Win7, but I'm leaving this change in place.
-			//windowHandles.MDIs_4DhWnd = (HWND)PA_GetHWND(0); 
-			//windowHandles.fourDhWnd = getWindowHandle("", windowHandles.MDIs_4DhWnd); 
-			windowHandles.fourDhWnd = GetMainWindow();
-			windowHandles.MDIhWnd = GetMDIClientWindow();
+			// REB 4/20/11 #27322 Support for the GetMainWindow and GetMDIClientWindow commands is no longer available in the new 4D API. Also PA_GetHWND seems to not work when
+			//    there is no focused window in 4D.  Instead I'll use the server workaround.
+			windowHandles.MDIs_4DhWnd = (HWND)PA_GetHWND(0); 
+			if(!(IsWindow(windowHandles.MDIs_4DhWnd))){
+				Unistring = PA_GetApplicationFullPath();
+				pathName = UnistringToCString(&Unistring);
+				charPos = strrchr(pathName,'\\');
+				*charPos = 0;
+				windowHandles.MDIs_4DhWnd = FindWindowEx(NULL, NULL, pathName, NULL);
+			}
+
+			windowHandles.fourDhWnd = getWindowHandle("", windowHandles.MDIs_4DhWnd); 
+			//windowHandles.fourDhWnd = GetMainWindow();
+			//windowHandles.MDIhWnd = GetMDIClientWindow();
 			windowHandles.MDIs_4DhWnd = GetWindow(windowHandles.MDIhWnd, GW_CHILD); //REB 3/26/10 #22878 Get the correct child handle so toolbars work correctly.
 
 			SystemParametersInfo(SPI_GETDRAGFULLWINDOWS, 0, &g_bDragFull, 0);
@@ -209,8 +224,17 @@ void PluginMain( long selector, PA_PluginParameters params )
 		  //Blk4D.fHandle = NULL;  OBSOLETE
 		  //Call4D (EX_GET_HWND, &Blk4D);
 		  //hWnd = (HWND)Blk4D.fHandle;
-		  //hWnd = (HWND)PA_GetHWND(0); // the current frontmost window
-			hWnd = GetMDIClientWindow();
+			hWnd = PA_GetHWND(NULL); // the current frontmost window
+			if(!(IsWindow(hWnd))){
+				 Unistring = PA_GetApplicationFullPath();
+				 pathName = UnistringToCString(&Unistring); // REB 4/20/11 #27322
+				 charPos = strrchr(pathName,'\\');
+				 *charPos = 0;
+				 hWnd = FindWindowEx(NULL, NULL, pathName, NULL);
+			}else{
+				//hWnd = PA_GetHWND(NULL); // the current frontmost window
+			}
+		
 			// while this is all we need to get frontmost window, we are probably looking for a titled window
 			gui_GetWindow( params, hWnd );
 			break;
@@ -570,6 +594,7 @@ void PluginMain( long selector, PA_PluginParameters params )
 		case 94:
 			sys_IsAppRunningAsService( params ); // REB 1/12/11 #25587
 			break;
+
 	}
 }
 
@@ -602,7 +627,7 @@ void PluginMain( long selector, PA_PluginParameters params )
 void sys_EnumPrinters( PA_PluginParameters params )
 {
 	PA_Variable				printerArray;
-	long					returnValue = 0, action = 0, defPrinterPosition, lSize = 0;
+	LONG_PTR					returnValue = 0, action = 0, defPrinterPosition, lSize = 0;
 	DWORD					dwSizeNeeded, cByteNeeded, cByteUsed;
 	DWORD					dwNumItems, dwTotalNumPrinters, dwRemoteNumItems = 0;
 	DWORD					dwItem;
@@ -794,7 +819,7 @@ void sys_EnumPrinters( PA_PluginParameters params )
 		if ((dwRemoteNumItems > 0) && (dwItem == (dwLocalNumItems - 1)) && (!bRemoteOnly)) {
 			PA_ClearVariable(&localPrinters);
 			ptrPA_Var = &remotePrinters;
-			loopOffset = (long)dwLocalNumItems * -1; // offset so new array will start at beginning
+			loopOffset = (LONG_PTR)dwLocalNumItems * -1; // offset so new array will start at beginning
 		}
 		*/
 		free(lpInfo2);
@@ -837,13 +862,14 @@ void sys_EnumPrinters( PA_PluginParameters params )
 void sys_GetPrintJob( PA_PluginParameters params)
 {
 
-	long								ret;
-	long								returnValue = 0, count = 0;
+	LONG_PTR							ret, length;
+	LONG_PTR							returnValue = 0, count = 0;
 	PA_Variable				        	printer;
 	char								windowTitle[] = "", printerName[255], executeCommand[255];
 	char								*pComma;
 	char								returnString[20];
-	long								printerName_len = 255, execCommand_len = 255;
+	LONG_PTR							printerName_len = 255, execCommand_len = 255;
+	PA_Unistring						Unistring;
 
 	activeCalls.bPrinterCapture							= TRUE;
 
@@ -867,7 +893,10 @@ void sys_GetPrintJob( PA_PluginParameters params)
 
 	g_intrProcMsg = PS_SEARCH;
 
-	PA_ExecuteMethod(executeCommand, execCommand_len);
+	// REB 4/20/11 #27322 Conver the C string to a Unistring
+	Unistring = CStringToUnistring(&executeCommand);
+	PA_ExecuteMethod(&Unistring);
+	//PA_ExecuteMethod(executeCommand, execCommand_len);
 
 	printer = PA_GetVariableParameter( params, 1 );
 
@@ -912,7 +941,7 @@ void sys_GetPrintJob( PA_PluginParameters params)
 			strcpy(returnString, "");
 		}
 		PA_SetTextInArray (printer, 7, returnString, strlen(returnString));
-
+		
 		returnValue = strlen(printerSettings.printerSelection);
 	}
 
@@ -961,9 +990,9 @@ void sys_GetPrintJob( PA_PluginParameters params)
 void	sys_GetNetworkInfo( PA_PluginParameters params )
 {
 	DWORD					dwFuncReturn;
-	long					returnValue = 0;
+	LONG_PTR					returnValue = 0;
 	char					infoString[255];
-	long					infoString_len = strlen(infoString);
+	LONG_PTR					infoString_len = strlen(infoString);
 	FIXED_INFO		*fixedInfo;
 	IP_ADDR_STRING	*pIPAddr;
 	ULONG					ulOutBufLen;
@@ -1079,10 +1108,10 @@ void	sys_GetNetworkInfo( PA_PluginParameters params )
 void	sys_GetRoutes( PA_PluginParameters params )
 {
 	DWORD					dwFuncReturn;
-	long					returnValue = 0, i, tableEntries;
+	LONG_PTR					returnValue = 0, i, tableEntries;
 	PA_Variable		table;
 	char					routeString[255], numToString[25];
-	long					routeString_Len = strlen(routeString);
+	LONG_PTR					routeString_Len = strlen(routeString);
 	ULONG					buffer_len = 0;
 	MIB_IPFORWARDTABLE		rtTable;
 	PMIB_IPFORWARDTABLE		pTable = &rtTable;
@@ -1122,7 +1151,7 @@ void	sys_GetRoutes( PA_PluginParameters params )
 				return;
 			}
 	
-			tableEntries = (long) pTable->dwNumEntries;
+			tableEntries = (LONG_PTR) pTable->dwNumEntries;
 
 			returnValue = tableEntries;
 			PA_ResizeArray (&table, tableEntries);
@@ -1137,7 +1166,7 @@ void	sys_GetRoutes( PA_PluginParameters params )
 				FormatIP(routeString, (LPARAM)pTable->table[i].dwForwardNextHop);
 				strcat(routeString,",");
 
-				switch ((int)pTable->table[i].dwForwardType)
+				switch ((INT_PTR)pTable->table[i].dwForwardType)
 				{
 					case 1:
 						strcat(routeString, "Not specified");
@@ -1187,7 +1216,7 @@ void sys_GetGUID( PA_PluginParameters params)
 	RPC_STATUS			rpc_status;
 	PUCHAR				cGuid;
 	char				guidString[MAXBUF];
-	long				guidString_len, guidStatus_len, returnValue;
+	LONG_PTR				guidString_len, guidStatus_len, returnValue;
 	char				guidStatus[MAXBUF];
 
 	guidString_len = PA_GetTextParameter( params, 1, guidString );
@@ -1248,23 +1277,23 @@ void sys_GetGUID( PA_PluginParameters params)
 
 void gui_GetWindow( PA_PluginParameters params, HWND hWnd )
 {
-	long			windowTitle_len;
+	LONG_PTR			windowTitle_len;
 	char			windowTitle[255];
-	long			returnValue;
+	LONG_PTR			returnValue;
 
 	windowTitle_len = PA_GetTextParameter( params, 1, windowTitle );
     windowTitle[windowTitle_len] = '\0';  // Explicitly set the length
 
 	if (strcmp(windowTitle, "*") == 0) { // return the frontmost window
-		returnValue = (long) hWnd;
+		returnValue = (LONG_PTR) hWnd;
 
 	} else {
 		if ( (strlen(windowTitle) == 0) && (windowHandles.MDIs_4DhWnd != NULL) ) {
-			returnValue = (long) windowHandles.fourDhWnd;
+			returnValue = (LONG_PTR) windowHandles.fourDhWnd;
 		} else if ((strcmp(_strlwr(windowTitle), "mdi") == 0) && (windowHandles.MDIhWnd != NULL)) {
-			returnValue = (long) windowHandles.MDIhWnd;
+			returnValue = (LONG_PTR) windowHandles.MDIhWnd;
 		} else {
-			returnValue = (long)getWindowHandle(windowTitle, hWnd);
+			returnValue = (LONG_PTR)getWindowHandle(windowTitle, hWnd);
 		}
 		if (!returnValue) {
 			returnValue = -3;
@@ -1281,13 +1310,13 @@ void gui_GetWindow( PA_PluginParameters params, HWND hWnd )
 
 void gui_GetWndRect( PA_PluginParameters params )
 {
-	long hWnd;
-	long x;
-	long y;
-	long w;
-	long h;
-	long returnValue;
-	long mode;                            // MWD 1/12/07 #12852
+	LONG_PTR hWnd;
+	LONG_PTR x;
+	LONG_PTR y;
+	LONG_PTR w;
+	LONG_PTR h;
+	LONG_PTR returnValue;
+	LONG_PTR mode;                            // MWD 1/12/07 #12852
 	HWND WindowhWnd;
 	HMONITOR hMon4D;
 	MONITORINFO monitorInfo;
@@ -1335,7 +1364,7 @@ void gui_GetWndRect( PA_PluginParameters params )
 				}
 			  returnValue = 1;
 			} else {
-			  returnValue = (long)GetLastError();
+			  returnValue = (LONG_PTR)GetLastError();
 			} // end if
     } // end if
 	} else {
@@ -1357,12 +1386,12 @@ void gui_GetWndRect( PA_PluginParameters params )
 
 void gui_SetWndRect( PA_PluginParameters params )
 {
-	long hWnd;
-	long x;
-	long y;
-	long w;
-	long h;
-	long returnValue;
+	LONG_PTR hWnd;
+	LONG_PTR x;
+	LONG_PTR y;
+	LONG_PTR w;
+	LONG_PTR h;
+	LONG_PTR returnValue;
 	HWND WindowhWnd;
 
 	hWnd = PA_GetLongParameter( params, 1 );
@@ -1393,9 +1422,9 @@ void gui_SetWndRect( PA_PluginParameters params )
 
 void gui_ShowWindow( PA_PluginParameters params )
 {
-	long hWnd;
-	long showState;
-	long returnValue;
+	LONG_PTR hWnd;
+	LONG_PTR showState;
+	LONG_PTR returnValue;
 	HWND WindowhWnd;
 
 	hWnd = PA_GetLongParameter( params, 1 );
@@ -1439,9 +1468,9 @@ void gui_ShowWindow( PA_PluginParameters params )
 
 void sys_GetUserName( PA_PluginParameters params )
 {
-	long userName_len;
+	LONG_PTR userName_len;
 	char userName[255];
-	long returnValue;
+	LONG_PTR returnValue;
 
 	userName_len = PA_GetTextParameter( params, 1, userName );
   userName[userName_len] = '\0';  // Explicitly set the length
@@ -1470,10 +1499,10 @@ void sys_GetUserName( PA_PluginParameters params )
 
 void gui_SetWindowTitle( PA_PluginParameters params )
 {
-	long hWnd;
-	long windowTitle_len;
+	LONG_PTR hWnd;
+	LONG_PTR windowTitle_len;
 	char windowTitle[255];
-	long returnValue;
+	LONG_PTR returnValue;
 	HWND WindowhWnd;
 
 	hWnd = PA_GetLongParameter( params, 1 );
@@ -1499,9 +1528,9 @@ void gui_SetWindowTitle( PA_PluginParameters params )
 
 void sys_IsMultiByte( PA_PluginParameters params )
 {
-	long byte_len;
+	LONG_PTR byte_len;
 	char byte[255];
-	long returnValue;
+	LONG_PTR returnValue;
 
 	byte_len = PA_GetTextParameter( params, 1, byte );
 
@@ -1520,8 +1549,8 @@ void sys_IsMultiByte( PA_PluginParameters params )
 
 void gui_DisableCloseBox( PA_PluginParameters params )
 {
-	long				hWnd;
-	long				returnValue;
+	LONG_PTR				hWnd;
+	LONG_PTR				returnValue;
 	HWND				WindowhWnd;
 	HMENU				hSysMenu;
 	BOOL				bUndo = FALSE;
@@ -1556,11 +1585,11 @@ void gui_DisableCloseBox( PA_PluginParameters params )
 
 void gui_SetWindowLong( PA_PluginParameters params )
 {
-	long hWnd;
-	long s;
-	long mode;
-	long level;
-	long returnValue;
+	LONG_PTR hWnd;
+	LONG_PTR s;
+	LONG_PTR mode;
+	LONG_PTR level;
+	LONG_PTR returnValue;
 	HWND WindowhWnd;
 	LONG style;
 
@@ -1604,14 +1633,14 @@ void gui_SetWindowLong( PA_PluginParameters params )
 //
 void gui_WinHelp( PA_PluginParameters params )
 {
-	long hWnd;
-	long fileName_len;
+	LONG_PTR hWnd;
+	LONG_PTR fileName_len;
 	char fileName[255];
-	long helpCommand;
-	long helpData;
-	long returnValue;
+	LONG_PTR helpCommand;
+	LONG_PTR helpData;
+	LONG_PTR returnValue;
 	HWND WindowhWnd;
-	int ret;
+	INT_PTR ret;
 
 	hWnd = PA_GetLongParameter( params, 1 );
 	fileName_len = PA_GetTextParameter( params, 2, fileName );
@@ -1623,7 +1652,7 @@ void gui_WinHelp( PA_PluginParameters params )
 	WindowhWnd = (HWND)hWnd;
 	if(IsWindow(WindowhWnd)) {
 		ret = WinHelp(WindowhWnd, fileName, helpCommand, helpData);
-		returnValue = (long)ret;
+		returnValue = (LONG_PTR)ret;
 	} else {
 		returnValue = 0;
 	}
@@ -1640,10 +1669,10 @@ void gui_WinHelp( PA_PluginParameters params )
 
 void gui_DelMenuItem( PA_PluginParameters params )
 {
-	long hWnd;
-	long menuNum;
-	long menuItem;
-	long returnValue;
+	LONG_PTR hWnd;
+	LONG_PTR menuNum;
+	LONG_PTR menuItem;
+	LONG_PTR returnValue;
 	HWND WindowhWnd;
 	HMENU hSubMenu, hMenu;
 
@@ -1683,32 +1712,43 @@ void gui_DelMenuItem( PA_PluginParameters params )
 //
 void gui_GetOpenFileName( PA_PluginParameters params )
 {
-	long		windowTitle_len;
+	LONG_PTR		windowTitle_len;
 	char		windowTitle[100];
-	long		filePattern_len;
+	LONG_PTR		filePattern_len;
 	char		filePattern[100];
-	long		fileDescription_len;
+	LONG_PTR		fileDescription_len;
 	char		fileDescription[100];
-	long		startFolder_len;
+	LONG_PTR		startFolder_len;
 	char		startFolder[255];
-	long		fileNameShort_len;
+	LONG_PTR		fileNameShort_len;
 	char		fileNameShort[255];
 	char		fileNameSuggested[255];
-	long		fileNameSuggested_len;
-	long		fileNameFull_len;
+	LONG_PTR		fileNameSuggested_len;
+	LONG_PTR		fileNameFull_len;
 	char		fileNameFull[255];
-	long		returnValue;
+	LONG_PTR		returnValue;
 	OPENFILENAME ofn;
   unsigned char fileOpenPattern[80];
-	long		mustExistOption = 0; 
+	LONG_PTR		mustExistOption = 0; 
 	BOOL		bUnhookSuccess; 
 	HWND		hWnd; 
 	char		plugInPath[255];
+	PA_Unistring		Unistring;
+	char				*pathName, *charPos;
 
 	g_FolderSelected = FALSE;  // MJG 6/15/05
 	windowHandles.openSaveTBhwnd = NULL;
 
-	hWnd = (HWND)PA_GetHWND(0);
+	if(PA_Is4DServer()){
+		 Unistring = PA_GetApplicationFullPath();
+		 pathName = UnistringToCString(&Unistring); // REB 4/20/11 #27322
+		 charPos = strrchr(pathName,'\\');
+		 *charPos = 0;
+		 hWnd = FindWindowEx(NULL, NULL, pathName, NULL);
+	}else{
+		hWnd = PA_GetHWND(NULL); // the current frontmost window
+	}
+	//hWnd = (HWND)PA_GetHWND(0);
 
 	windowTitle_len = PA_GetTextParameter( params, 1, windowTitle );
   windowTitle[windowTitle_len] = '\0';  // Explicitly set the length
@@ -1818,31 +1858,43 @@ void gui_GetOpenFileName( PA_PluginParameters params )
 //
 void gui_GetSaveFileName( PA_PluginParameters params )
 {
-	long		windowTitle_len;
+	LONG_PTR		windowTitle_len;
 	char		windowTitle[100];
-	long		filePattern_len;
+	LONG_PTR		filePattern_len;
 	char		filePattern[100];
-	long		fileDescription_len;
+	LONG_PTR		fileDescription_len;
 	char		fileDescription[100];
-	long		startFolder_len;
+	LONG_PTR		startFolder_len;
 	char		startFolder[255];
-	long		fileNameShort_len;
+	LONG_PTR		fileNameShort_len;
 	char		fileNameShort[255];
 	char		fileNameSuggested[255];
-	long		fileNameSuggested_len;
-	long		fileNameFull_len;
+	LONG_PTR		fileNameSuggested_len;
+	LONG_PTR		fileNameFull_len;
 	char		fileNameFull[255];
-	long		returnValue;
+	LONG_PTR		returnValue;
 	OPENFILENAME ofn;
   unsigned char fileOpenPattern[80];
-	long		mustExistOption = 0; 
+	LONG_PTR		mustExistOption = 0; 
 	BOOL		bUnhookSuccess; 
 	HWND		hWnd; 
 	char		plugInPath[255];
+	PA_Unistring		Unistring;
+	char				*pathName, *charPos;
 
 	g_FolderSelected = FALSE;  // MJG 6/15/05
 	windowHandles.openSaveTBhwnd = NULL;
-	hWnd = (HWND)	PA_GetHWND(0);
+
+	if(PA_Is4DServer()){
+		 Unistring = PA_GetApplicationFullPath();
+		 pathName = UnistringToCString(&Unistring); // REB 4/20/11 #27322
+		 charPos = strrchr(pathName,'\\');
+		 *charPos = 0;
+		 hWnd = FindWindowEx(NULL, NULL, pathName, NULL);
+	}else{
+		hWnd = PA_GetHWND(NULL); // the current frontmost window
+	}
+	//hWnd = (HWND)	PA_GetHWND(0);
 
 	windowTitle_len = PA_GetTextParameter( params, 1, windowTitle );
   windowTitle[windowTitle_len] = '\0';  // Explicitly set the length
@@ -1946,14 +1998,14 @@ void gui_GetSaveFileName( PA_PluginParameters params )
 
 void gui_LoadIcon( PA_PluginParameters params )
 {
-	long iconName_len;
+	LONG_PTR iconName_len;
 	char iconName[255];  //complete path of icon file
-	long hIcon;
-	long returnValue;
-   HICON tmpIcon;
-
+	LONG_PTR hIcon;
+	LONG_PTR returnValue;
+    HICON tmpIcon;
+	
 	iconName_len = PA_GetTextParameter( params, 1, iconName );
-  iconName[iconName_len] = '\0';  // Explicitly set the length
+    iconName[iconName_len] = '\0';  // Explicitly set the length
 
 	hIcon = PA_GetLongParameter( params, 2 );
   
@@ -1962,7 +2014,7 @@ void gui_LoadIcon( PA_PluginParameters params )
 	tmpIcon = (HICON)LoadImage(0,iconName,IMAGE_ICON,0,0,LR_DEFAULTSIZE | LR_LOADFROMFILE);
 
 	if (tmpIcon != 0) {
-	  hIcon = (long)tmpIcon;
+	  hIcon = (LONG_PTR)tmpIcon;
 	  returnValue = 1;
 	}
 	else {
@@ -1981,13 +2033,13 @@ void gui_LoadIcon( PA_PluginParameters params )
 
 void gui_SetIcon( PA_PluginParameters params )
 {
-	long hWnd;
-	long hIcon;
-	long returnValue;
+	LONG_PTR hWnd;
+	LONG_PTR hIcon;
+	LONG_PTR returnValue;
 	HWND WindowhWnd;
 
 	hWnd = PA_GetLongParameter( params, 1 );
-  hIcon = PA_GetLongParameter( params, 2 );
+    hIcon = PA_GetLongParameter( params, 2 );
 
 	WindowhWnd = (HWND)hWnd;
 
@@ -2011,8 +2063,8 @@ void gui_SetIcon( PA_PluginParameters params )
 
 void gui_GetWindowFrom4DWin( PA_PluginParameters params )
 {
-	long h4DWnd;
-	long returnValue;
+	LONG_PTR h4DWnd;
+	LONG_PTR returnValue;
 
 	h4DWnd = PA_GetLongParameter( params, 1 );
 
@@ -2037,7 +2089,7 @@ void sys_GetRegionSettings( PA_PluginParameters params, BOOL arraySupplied )
 {
 	PA_Variable	values, valueDescr;
 	char		textParam[80];
-	long		textParam_len;
+	LONG_PTR		textParam_len;
 	LCTYPE	infoType[NBR_ELEMENTS];
 	char*		description[] = {
 	 "Short Date", "Long Date", "Date Separator", "Time Format",
@@ -2047,11 +2099,11 @@ void sys_GetRegionSettings( PA_PluginParameters params, BOOL arraySupplied )
 	 "Currency Decimal Symbol", "Currency Digits after Decimal",
 	 "Currency Grouping Symbol", "List Separator"
 	};
-	long		returnValue, i, loopStop, gliReturnValue;  //gli = GetLocaleInfo
-	long		requestedSetting;
+	LONG_PTR		returnValue, i, loopStop, gliReturnValue;  //gli = GetLocaleInfo
+	LONG_PTR		requestedSetting;
 	char		resultString[255];
 	char		sz[255]; 
-	int			bufSize = 255, resultSize = 255;
+	INT_PTR			bufSize = 255, resultSize = 255;
 
 	infoType[0] = LOCALE_SSHORTDATE;
 	infoType[1] = LOCALE_SLONGDATE;
@@ -2130,7 +2182,7 @@ void sys_GetRegionSettings( PA_PluginParameters params, BOOL arraySupplied )
 //
 //  PURPOSE:	Gets time zone setting of cmptr	
 //
-//  COMMENTS: Requires two text strings and a long
+//  COMMENTS: Requires two text strings and a LONG_PTR
 //						Returns name of standard time, name of daylight time, and
 //						flag if cmptr set to auto adjust for daylight savings changes.
 //
@@ -2147,12 +2199,12 @@ void sys_GetRegionSettings( PA_PluginParameters params, BOOL arraySupplied )
 
 void sys_GetTimeZone( PA_PluginParameters params )
 {
-	long		standardName_len;
+	LONG_PTR		standardName_len;
 	char		standardName[255];
-	long		daylightName_len;
+	LONG_PTR		daylightName_len;
 	char		daylightName[255];
-	long		autoDaylight = 0;
-	long		returnValue;
+	LONG_PTR		autoDaylight = 0;
+	LONG_PTR		returnValue;
 	TIME_ZONE_INFORMATION TimeZoneInformation; // REB 1/21/09 #19035
 
 	returnValue = 1;
@@ -2187,8 +2239,8 @@ void sys_GetTimeZone( PA_PluginParameters params )
 
 void sys_GetUTCOffset ( PA_PluginParameters params )
 {
-	long					returnValue = 0;
-	long					bias = 0;
+	LONG_PTR					returnValue = 0;
+	LONG_PTR					bias = 0;
 
 	//struct _timeb tstruct;
 	TIME_ZONE_INFORMATION TimeZoneInformation; // REB 1/21/09 #19035
@@ -2267,9 +2319,9 @@ void sys_GetUTCOffset ( PA_PluginParameters params )
 //
 void gui_GetDisplayFontDPI( PA_PluginParameters params)
 {
-	long		dpi = 0;
+	LONG_PTR		dpi = 0;
 	char		subKey[100];
-	long		returnValue, errorCode;
+	LONG_PTR		returnValue, errorCode;
 	HKEY		hKey;
 	DWORD		dwWordType = REG_DWORD;
 	DWORD		dwWordSize = sizeof(DWORD);
@@ -2313,11 +2365,11 @@ void gui_GetDisplayFontDPI( PA_PluginParameters params)
 //
 void sys_GetDefPrinter( PA_PluginParameters params )
 {
-	long printerName_len;
+	LONG_PTR printerName_len;
 	char printerName[255];
 	char *pDefaultPrinter;				// REB 3/6/09 #17333 
-	long returnValue;
-	unsigned long ulBytesNeeded;		// REB 3/6/09 #17333 
+	LONG_PTR returnValue;
+	ULONG_PTR ulBytesNeeded;		// REB 3/6/09 #17333 
 
 	printerName_len = PA_GetTextParameter( params, 1, printerName );
     printerName[printerName_len] = '\0';  // Explicitly set the length
@@ -2348,7 +2400,7 @@ void sys_GetDefPrinter( PA_PluginParameters params )
 //
 void sys_SetDefPrinter( PA_PluginParameters params )
 {
-	long printerName_len;
+	LONG_PTR printerName_len;
 	char printerName[255];
 	char tempName[255];					// REB 3/6/09 #17333 Printer name after spooler info is removed
 	char separator[] = ",";				// REB 3/6/09 #17333 Separates printer name from spooler info
@@ -2366,7 +2418,7 @@ void sys_SetDefPrinter( PA_PluginParameters params )
 		returnValue = SetDefaultPrinter(tempName);
 	}		
 
-	PA_ReturnLong( params, (long)returnValue );
+	PA_ReturnLong( params, (LONG_PTR)returnValue );
 }
 
 
@@ -2377,7 +2429,7 @@ void sys_SetDefPrinter( PA_PluginParameters params )
 //
 //  PURPOSE:  Get version of operating system
 //
-//  COMMENTS: Internally returns long that corresponds to constant defined
+//  COMMENTS: Internally returns LONG_PTR that corresponds to constant defined
 //			  for each OS.  params are ignored on internal calls.
 //			  External call gets version as constant and string for service pack.
 //			  Some info is in win.ini file (Win95/98/Me) and some
@@ -2388,11 +2440,11 @@ void sys_SetDefPrinter( PA_PluginParameters params )
 //				   7/15/09 Added check for Windows 7 
 //            
 //
-long sys_GetOSVersion(BOOL bInternalCall, PA_PluginParameters params)
+LONG_PTR sys_GetOSVersion(BOOL bInternalCall, PA_PluginParameters params)
 {
 
 	OSVERSIONINFOEX		osvinfo;
-	long				returnValue = 0;
+	LONG_PTR				returnValue = 0;
 
 	osvinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 	GetVersionEx( &osvinfo );
@@ -2491,7 +2543,7 @@ BOOL CALLBACK ComDlg32DlgProc (HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 // ------------------------------------------------
 // 
-//  FUNCTION: postHook( int hCode, WPARAM wParam, LPARAM lParam)
+//  FUNCTION: postHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 //
 //  PURPOSE:	Exit dialog using a different control
 //
@@ -2501,7 +2553,7 @@ BOOL CALLBACK ComDlg32DlgProc (HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 //   
 //	DATE:			dcc 07/30/01
 //
-LRESULT CALLBACK postHook( int hCode, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK postHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 {
 
 	/*
@@ -2521,7 +2573,7 @@ LRESULT CALLBACK postHook( int hCode, WPARAM wParam, LPARAM lParam)
 
 // ------------------------------------------------
 // 
-//  FUNCTION: theHook( int hCode, WPARAM wParam, LPARAM lParam)
+//  FUNCTION: theHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 //
 //  PURPOSE:	Process disable and hide controls
 //
@@ -2533,7 +2585,7 @@ LRESULT CALLBACK postHook( int hCode, WPARAM wParam, LPARAM lParam)
 //					04/14/04 Improved efficiency when working with 
 //                  FD_SELECT_DIRECTORY. 
 
-LRESULT CALLBACK theHook( int hCode, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK theHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 {
 	
 	TCHAR					szClassName[255];
@@ -2544,8 +2596,8 @@ LRESULT CALLBACK theHook( int hCode, WPARAM wParam, LPARAM lParam)
 	CWPSTRUCT			*cwps		= (CWPSTRUCT*)lParam;
 	TBBUTTONINFO	tbInfo;
 	BOOL					bChangeHiddenState = TRUE, bSelectedItem = FALSE;
-	static int		tbOnetime = 0;
-	int						count, i;
+	static INT_PTR		tbOnetime = 0;
+	INT_PTR						count, i;
 
 	if (windowHandles.openSaveTBhwnd == NULL) {
 		tbOnetime = 0;
@@ -2667,7 +2719,7 @@ LRESULT CALLBACK theHook( int hCode, WPARAM wParam, LPARAM lParam)
 //
 BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 {
-	int			ctrlID;
+	INT_PTR			ctrlID;
 	BOOL		bWindowEnabled;
 	ctrlID = GetDlgCtrlID(hWnd);
 
@@ -2857,7 +2909,7 @@ HWND getWindowHandle(char* windowTitle, HWND hWnd)
 	HWND			MDIhWnd, MainhWnd, ChildhWnd, NexthWnd, returnValue = 0;
 	char			WindowName[255];
 	char			szClassName[255];
-	long			windowTitle_len;
+	LONG_PTR			windowTitle_len;
 	
 	windowTitle_len = strlen(windowTitle);
 	if(IsWindow(hWnd)) {
@@ -2888,7 +2940,14 @@ HWND getWindowHandle(char* windowTitle, HWND hWnd)
 		// windowTitle will be blank
 		if (windowTitle_len == 0) {
 			// Get the parent of the MDI Window
-			MainhWnd = GetParent(MDIhWnd);
+			 // REB 4/14/11 #25290 If we already have the main window handle make sure
+			 // we use it.
+			if(IsWindow(GetParent(MDIhWnd))){
+				MainhWnd = GetParent(MDIhWnd);
+			}else{
+				MainhWnd = MDIhWnd; 
+			}
+
 			if(IsWindow(MainhWnd)) {
 			  returnValue = MainhWnd;
 			  return returnValue;
@@ -2914,8 +2973,8 @@ HWND getWindowHandle(char* windowTitle, HWND hWnd)
 					return returnValue;
 				}
 			} while (strcmp(_strlwr(windowTitle),_strlwr(WindowName)) != 0);
-  		// Match found
-		  returnValue = ChildhWnd;
+			// Match found
+			returnValue = ChildhWnd;
 		}
 	} else {
 	  returnValue = 0;
@@ -2935,8 +2994,8 @@ HWND getWindowHandle(char* windowTitle, HWND hWnd)
 LRESULT APIENTRY newProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	HWND					printWndHndl = NULL, childhWnd = NULL, nexthWnd = NULL;
-	long					command; // 01/22/03
-	static long		count = 1;
+	LONG_PTR					command; // 01/22/03
+	static LONG_PTR		count = 1;
 	char					windowName[255];
 	char					dlgCaption[15];
 
@@ -2946,7 +3005,7 @@ LRESULT APIENTRY newProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case (WM_USER + 0x0021) :
 			if ((lParam == WM_LBUTTONDOWN) || (lParam == WM_RBUTTONDOWN) || (lParam == WM_LBUTTONDBLCLK) || (lParam == WM_RBUTTONDBLCLK)) {
 		
-				processWindowMessage(TRAY_ICON_FUNCTION, (long)hwnd, wParam, lParam);
+				processWindowMessage(TRAY_ICON_FUNCTION, (LONG_PTR)hwnd, wParam, lParam);
 			}
 			break;
 		// 01/22/03 added check for maximize
@@ -2980,7 +3039,7 @@ LRESULT APIENTRY newProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 								break;
 
 						}
-						//command = (long)childhWnd;
+						//command = (LONG_PTR)childhWnd;
 						//command *= -1;
 					} else {
 						processWindowMessage(RESPECT_TOOL_BAR_FUNCTION, command, 0L, 0L);
@@ -3031,12 +3090,16 @@ LRESULT APIENTRY newProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						{
 							case 1 :
 								windowHandles.prthWnd = 0;
-								processHandles.wpPrintSettingsDlgOrigProc = (WNDPROC) SetWindowLong(printWndHndl, DWL_DLGPROC, (LONG) newPrtSettingsDlgProc);
+								// REB 3/18/11 #25290
+								processHandles.wpPrintSettingsDlgOrigProc = (WNDPROC) SetWindowLongPtr(printWndHndl, DWLP_DLGPROC, (LONG_PTR) newPrtSettingsDlgProc);
+								//processHandles.wpPrintSettingsDlgOrigProc = (WNDPROC) SetWindowLong(printWndHndl, DWL_DLGPROC, (LONG) newPrtSettingsDlgProc);
 								windowHandles.prtSettingshWnd = printWndHndl;
 								break;
 
 							case 2 :
-								processHandles.wpPrintDlgOrigProc = (WNDPROC) SetWindowLong(printWndHndl, DWL_DLGPROC, (LONG) newPrtDlgProc);
+								// REB 3/18/11 #25290
+								processHandles.wpPrintDlgOrigProc = (WNDPROC) SetWindowLongPtr(printWndHndl, DWLP_DLGPROC, (LONG_PTR) newPrtDlgProc);
+								//processHandles.wpPrintDlgOrigProc = (WNDPROC) SetWindowLong(printWndHndl, DWL_DLGPROC, (LONG) newPrtDlgProc);
 								//restoreOrig4DWindowProcess(); // 01/21/03 // MJG 3/26/04 The 4D window will remain subclassed until the plug-in is unloaded.
 								//if (activeCalls.bTrayIcons == FALSE) {
 									//SetWindowLong(windowHandles.fourDhWnd, GWL_WNDPROC, (LONG) processHandles.wpFourDOrigProc);
@@ -3076,13 +3139,13 @@ LRESULT APIENTRY newPrtSettingsDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
 
 // ------------------------------------------------
 // 
-//  FUNCTION: printSettingsDlgHook( int hCode, WPARAM wParam, LPARAM lParam)
+//  FUNCTION: printSettingsDlgHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 //
 //  PURPOSE:	Get change of printer if combo box accessed
 //
 //	DATE:			dcc 11/17/01
 //
-LRESULT CALLBACK printSettingsDlgHook( int hCode, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK printSettingsDlgHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 {
 	CWPRETSTRUCT	*cwrps	= (CWPRETSTRUCT*)lParam;
 
@@ -3115,13 +3178,13 @@ LRESULT APIENTRY newPrtDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 // ------------------------------------------------
 // 
-//  FUNCTION: printDlgHook( int hCode, WPARAM wParam, LPARAM lParam)
+//  FUNCTION: printDlgHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 //
 //  PURPOSE:	Get change of printer if combo box accessed
 //
 //	DATE:			dcc 11/17/01
 //
-LRESULT CALLBACK printDlgHook( int hCode, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK printDlgHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam)
 {
 	
 	CWPRETSTRUCT	*cwrps	= (CWPRETSTRUCT*)lParam;
@@ -3149,7 +3212,7 @@ BOOL CALLBACK EnumChildProc2(HWND hWnd, LPARAM lParam)
 {
 	char						szClassName[255];
 	char						comboText[80];
-	long						comboText_len = strlen(comboText), ID;
+	LONG_PTR						comboText_len = strlen(comboText), ID;
 	LRESULT						ndx;
 	BOOL						bTrans = FALSE, bSigned = FALSE;
 
@@ -3233,9 +3296,9 @@ BOOL CALLBACK EnumChildProc2(HWND hWnd, LPARAM lParam)
 //	DATE:			dcc 04/20/02
 //
 
-long enumPrintersUsingRegistry( PA_Variable *printerArray )
+LONG_PTR enumPrintersUsingRegistry( PA_Variable *printerArray )
 {
-	long					returnValue = 0, errorCode;
+	LONG_PTR					returnValue = 0, errorCode;
 	HKEY					hKeyWindows, hKeyDevices, rootKey;
 	char					subKey[100];
 	DWORD					dwIndex = 0;
@@ -3272,7 +3335,7 @@ long enumPrintersUsingRegistry( PA_Variable *printerArray )
 	{
 		if (errorCode == ERROR_SUCCESS) {
 			// get data for device (printer)	
-				PA_ResizeArray(printerArray, (long) dwIndex + 1);
+				PA_ResizeArray(printerArray, (LONG_PTR) dwIndex + 1);
 				strcat(sz, ",");
 				strcat(sz, szData);
 				if (strcmp(sz, defPrinter) == 0) {
@@ -3302,9 +3365,9 @@ long enumPrintersUsingRegistry( PA_Variable *printerArray )
 //	DATE:			dcc 04/20/02
 //
 
-long enumPrintersUsingINI( PA_Variable *printerArray )
+LONG_PTR enumPrintersUsingINI( PA_Variable *printerArray )
 {
-	long					returnValue = 0, count = 0, pSectionBuf_len = 0;
+	LONG_PTR					returnValue = 0, count = 0, pSectionBuf_len = 0;
 	char					szSectionName[80], szKeyName[80], szDefault[80];
 	char					defPrinter[80], szSectionBuf[1000], szDevice[80], sep[3]; // increased sep from 2 to 3
 	char					*pToken = NULL, *pSectionBuf = NULL;
@@ -3380,8 +3443,8 @@ void sys_GetTimeZoneList( PA_PluginParameters params )
 	char			standardName[255];
 	char			daylightName[255];
 	char			displayName[255];
-	long			displayName_len;
-	long			returnValue, errorCode;
+	LONG_PTR			displayName_len;
+	LONG_PTR			returnValue, errorCode;
 	HKEY			hkTimeZone, hkRootKey;
 	char			TimeStr[255];
 	char			hours[2];
@@ -3515,10 +3578,11 @@ void sys_GetTimeZoneList( PA_PluginParameters params )
 }
 
 
+
 void TWAIN_GetSources ( PA_PluginParameters params )
 {
 
-	long			returnValue, OK, state, debug;
+	LONG_PTR			returnValue, OK, state, debug;
 	DWORD			index = 1;
 	PA_Variable		atSources;
 	TW_IDENTITY		NewSourceId;
@@ -3555,9 +3619,9 @@ void TWAIN_GetSources ( PA_PluginParameters params )
 
 void TWAIN_SetSource ( PA_PluginParameters params )
 {
-	long			returnValue, OK, state;
+	LONG_PTR			returnValue, OK, state;
 	TW_IDENTITY		NewSourceId;
-	long			source_len;
+	LONG_PTR			source_len;
 	char			sourceName[255];
 
 	source_len = PA_GetTextParameter( params, 1, sourceName );
@@ -3596,19 +3660,40 @@ void TWAIN_SetSource ( PA_PluginParameters params )
 void TWAIN_AcquireImage ( PA_PluginParameters params )
 {
 
-	long			returnValue = 0, showDialog;
+	LONG_PTR		returnValue = 0, showDialog;
 	char*			charPos;
 	char			fileName[255] = "";
-	char			pathName[255] = "";
+	char			fileName2[255] = "";
+	char*			pathName, *pch = NULL;
 	char			command[255] = "";
+	char			pathChar[1] = "\\";
 	HANDLE			DIBHandle = NULL;
+	PA_Unistring	Unistring;
 
 	showDialog = PA_GetLongParameter( params, 1 );
 
-	PA_GetApplicationFullPath(pathName);
+	Unistring = PA_GetApplicationFullPath(); // REB 4/20/11 #27322
+	pathName = UnistringToCString(&Unistring); // REB 4/20/11 #27322 #27490 Fixed method call.
 	charPos = strrchr(pathName,'\\');
-	strncpy (fileName,pathName,(charPos-pathName+1));
-	strcat(fileName, "\\TWNIMG.bmp");
+	strncpy (fileName, pathName,(charPos-pathName+1));
+	strcat(fileName, "\TWNIMG.bmp");
+
+	pch = fileName;
+
+	charPos = strchr(fileName, '\\');
+	while(charPos != NULL){
+		strncat(fileName2, pch, (charPos-pch));
+		pch = charPos;
+		charPos = strchr((charPos + 1), '\\');
+		if(charPos != NULL){
+			strcat(fileName2, "\\");
+		}else{
+			// add the remainder of fileName to fileName2.
+			strcat(fileName2, "\\");
+			strcat(fileName2, pch);
+		}
+	}
+
 
 
 	// Allow the image dialog to display if so desired.
@@ -3624,7 +3709,7 @@ void TWAIN_AcquireImage ( PA_PluginParameters params )
 	// Updated so that return code is 1 for success, 0 for cancel and negative for error codes.
 	// Suppress eztwain error dialogs
 	if (DIBHandle != NULL && returnValue >= 0){
-		returnValue = TWAIN_WriteNativeToFilename(DIBHandle, fileName);
+		returnValue = TWAIN_WriteNativeToFilename(DIBHandle, fileName2);
 	
 		// TWAIN_WriteNativetoFilename returns 0 on success
 		if (returnValue == 0) {
@@ -3632,10 +3717,13 @@ void TWAIN_AcquireImage ( PA_PluginParameters params )
 			returnValue = 1;
 
 			strcpy(command, "DOCUMENT TO BLOB(\"");
-			strcat(command, fileName);
+			strcat(command, fileName2);
 			strcat(command, "\";xTWAINBLOB)");
 
-			PA_ExecuteMethod(command, strlen(command));
+			// REB 4/20/11 #27322 Conver the C string to a Unistring
+			Unistring = CStringToUnistring(&command);
+			PA_ExecuteMethod(&Unistring);
+			//PA_ExecuteMethod(command, strlen(command));
 
 			DeleteFile(fileName);
 		}
@@ -3658,7 +3746,7 @@ void sys_IsAppFrontmost ( PA_PluginParameters params )
 {
 	HWND			hwndFront;
 	HWND			MDIhWnd, ChildhWnd, NexthWnd, returnValue = 0;
-	long			lFound = 0;
+	LONG_PTR			lFound = 0;
 	
 	// First get the frontmost window.
 	hwndFront = GetForegroundWindow();
@@ -3705,13 +3793,13 @@ void sys_IsAppFrontmost ( PA_PluginParameters params )
 //
 void gui_MessageBox( PA_PluginParameters params )
 {
-	long ownerHandle;
-	long messageText_len;
+	LONG_PTR ownerHandle;
+	LONG_PTR messageText_len;
 	char messageText[32000];
-	long dialogTitle_len;
+	LONG_PTR dialogTitle_len;
 	char dialogTitle[32000];
-	long dialogType;
-	long returnValue;
+	LONG_PTR dialogType;
+	LONG_PTR returnValue;
 
 	ownerHandle = PA_GetLongParameter( params, 1 );
 	messageText_len = PA_GetTextParameter( params, 2, messageText );
@@ -3740,7 +3828,7 @@ void gui_MessageBox( PA_PluginParameters params )
 void gui_SetMDIOpaque (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 		
 	returnValue = SetLayeredWindowAttributes(windowHandles.fourDhWnd, GetSysColor(COLOR_APPWORKSPACE) , 255, LWA_ALPHA);
 	// REB 3/11/10 #23109 Set the window style back to the orignal value.
@@ -3766,7 +3854,7 @@ void gui_SetMDIOpaque (PA_PluginParameters params)
 void gui_SetMDITransparent (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 	// REB 3/11/10 #23109 Get the original window style before we mess around with it.
 	windowStyle = GetWindowLongPtr(windowHandles.fourDhWnd, GWL_EXSTYLE);
 
@@ -3791,7 +3879,7 @@ void gui_SetMDITransparent (PA_PluginParameters params)
 void gui_HideTaskBar (PA_PluginParameters params)
 {
 	HWND HWND_tray;
-	long returnValue;
+	LONG_PTR returnValue;
 
 	HWND_tray = FindWindow("Shell_TrayWnd", NULL);
 	returnValue =  ShowWindow(HWND_tray, SW_HIDE);
@@ -3815,7 +3903,7 @@ void gui_HideTaskBar (PA_PluginParameters params)
 void gui_ShowTaskBar (PA_PluginParameters params)
 {
 	HWND HWND_tray;
-	long returnValue;
+	LONG_PTR returnValue;
 
 	HWND_tray = FindWindow("Shell_TrayWnd", NULL);
 	returnValue =  ShowWindow(HWND_tray, SW_SHOW);
@@ -3846,7 +3934,7 @@ void gui_ShowTaskBar (PA_PluginParameters params)
 void gui_HideTitleBar (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 
 	SetWindowLong (windowHandles.fourDhWnd, GWL_STYLE, GetWindowLong (windowHandles.fourDhWnd, GWL_STYLE) | WS_POPUP);
 	SetWindowLong (windowHandles.fourDhWnd, GWL_STYLE, GetWindowLong (windowHandles.fourDhWnd, GWL_STYLE) &~ WS_CAPTION );
@@ -3871,7 +3959,7 @@ void gui_HideTitleBar (PA_PluginParameters params)
 void gui_ShowTitleBar (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 
 	SetWindowLong (windowHandles.fourDhWnd, GWL_STYLE, GetWindowLong (windowHandles.fourDhWnd, GWL_STYLE) &~ WS_POPUP);
 	SetWindowLong (windowHandles.fourDhWnd, GWL_STYLE, GetWindowLong (windowHandles.fourDhWnd, GWL_STYLE) | WS_CAPTION );
@@ -3895,7 +3983,7 @@ void gui_ShowTitleBar (PA_PluginParameters params)
 void gui_MaximizeMDI (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 	WINDOWPLACEMENT wndpl;
 
 	wndpl.length = sizeof(WINDOWPLACEMENT);
@@ -3920,7 +4008,7 @@ void gui_MaximizeMDI (PA_PluginParameters params)
 void gui_MinimizeMDI (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 	WINDOWPLACEMENT wndpl;
 
 	wndpl.length = sizeof(WINDOWPLACEMENT);
@@ -3945,7 +4033,7 @@ void gui_MinimizeMDI (PA_PluginParameters params)
 void gui_RestoreMDI (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 	WINDOWPLACEMENT wndpl;
 
 	wndpl.length = sizeof(WINDOWPLACEMENT);
@@ -3971,7 +4059,7 @@ void gui_RestoreMDI (PA_PluginParameters params)
 void sys_DisableTaskManager (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 	HKEY hk;
 	DWORD val=1;
 	
@@ -4005,7 +4093,7 @@ void sys_DisableTaskManager (PA_PluginParameters params)
 void sys_EnableTaskManager (PA_PluginParameters params)
 {
 
-	long returnValue;
+	LONG_PTR returnValue;
 	HKEY hk;
 	
 	if(hookHandles.keyboardLLHook)
@@ -4031,16 +4119,16 @@ void sys_EnableTaskManager (PA_PluginParameters params)
 
 // ------------------------------------------------
 // 
-//  FUNCTION: sys_SetRegKey( PA_PluginParameters params, long selector )
+//  FUNCTION: sys_SetRegKey( PA_PluginParameters params, LONG_PTR selector )
 //
 //  PURPOSE:  Set a registry key value.
 //        
 //	DATE:	  REB 11/17/10 #25402
 //
-void sys_SetRegKey( PA_PluginParameters params, long selector )
+void sys_SetRegKey( PA_PluginParameters params, LONG_PTR selector )
 {
-	long returnValue, regKey, retErr, dataSize, arraySize, value, expandDataSize, keyState;
-	long i, len;
+	LONG_PTR returnValue, regKey, retErr, dataSize, arraySize, value, expandDataSize, keyState;
+	LONG_PTR i, len;
 	char regSub[MAXBUF];
 	char regName[MAXBUF];
 	char *newDataBuffer = NULL, *element = NULL, *pos = NULL;
@@ -4181,8 +4269,9 @@ void sys_SetRegKey( PA_PluginParameters params, long selector )
 			case REG_EXPAND_SZ:
 			case REG_SZ:
 
-				len = PA_GetTextParameter( params, 4, NULL);
-				newDataBuffer = malloc(len);
+				len = PA_GetTextParameter( params, 4, NULL) + 1;
+				newDataBuffer = malloc(len * sizeof(char));
+				memset(newDataBuffer, 0, (len * sizeof(char)));
 				len = PA_GetTextParameter( params, 4, newDataBuffer);
 				newDataBuffer[len] = '\0';
 
@@ -4193,6 +4282,8 @@ void sys_SetRegKey( PA_PluginParameters params, long selector )
 				}else{
 					returnValue = retErr * -1;
 				}
+
+				free(newDataBuffer);
 
 				break;
 			} 
@@ -4210,7 +4301,7 @@ void sys_SetRegKey( PA_PluginParameters params, long selector )
 
 // ------------------------------------------------
 // 
-//  FUNCTION: sys_IsAppRunningAsService( PA_PluginParameters params, long selector )
+//  FUNCTION: sys_IsAppRunningAsService( PA_PluginParameters params, LONG_PTR selector )
 //
 //  PURPOSE:  Determine if the application is running as a service.
 //        
@@ -4257,7 +4348,7 @@ void sys_IsAppRunningAsService( PA_PluginParameters params )
 //
 // REB 1/8/10 #22389 Code contributed by miyako
 //
-LRESULT CALLBACK keyboardLLHook(int code, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK keyboardLLHook(INT_PTR code, WPARAM wParam, LPARAM lParam)
 {
 
 	KBDLLHOOKSTRUCT *pkh = (KBDLLHOOKSTRUCT *) lParam;

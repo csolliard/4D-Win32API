@@ -32,21 +32,21 @@ extern struct		PROCESSHANDLES
 //added 01/17/03 see 4DPlugin082102.c
 extern struct		TOOLBARRESTRICT
 {
-	long		toolBarOnDeck;
-	long		top;
-	long		left;
-	long		right;
-	long		bottom;
-	int			topProcessNbr;
-	int			leftProcessNbr;
-	int			rightProcessNbr;
-	int			bottomProcessNbr;
-	long		trackingRestriction;
-	long		appBeingMaxed;
-	long		appWindowState;
+	LONG_PTR		toolBarOnDeck;
+	LONG_PTR		top;
+	LONG_PTR		left;
+	LONG_PTR		right;
+	LONG_PTR		bottom;
+	INT_PTR			topProcessNbr;
+	INT_PTR			leftProcessNbr;
+	INT_PTR			rightProcessNbr;
+	INT_PTR			bottomProcessNbr;
+	LONG_PTR		trackingRestriction;
+	LONG_PTR		appBeingMaxed;
+	LONG_PTR		appWindowState;
 	RECT		origWindowRect;
-	long		clientOffsetx;
-	long		clientOffsety;
+	LONG_PTR		clientOffsetx;
+	LONG_PTR		clientOffsety;
 	char		minimizedWindows[SMLBUF][SMLBUF]; // REB 8/11/08 #16207
 	RECT		previousWindowRect; // REB 3/26/10
 } toolBarRestrictions;
@@ -75,12 +75,12 @@ void sys_GetCommandLine( PA_PluginParameters params )
 	char                paramElement[MAXBUF];
 	char				executableString[MAXBUF];
 	char				*pMarker;
-	long				returnValue = 0, commandLine_len = 0, charsToCopy;
+	LONG_PTR				returnValue = 0, commandLine_len = 0, charsToCopy;
 	LPTSTR				pCommandLineStr, pTemp;
 	PA_Variable			parameters;
 	BOOL				bInQuotes = FALSE, bDone = FALSE;
-	long				paramCount = 0;
-	long				action = 0;
+	LONG_PTR				paramCount = 0;
+	LONG_PTR				action = 0;
 
 	memset(commandLineStr, 0, MAXBUF);
 	memset(paramElement, 0, MAXBUF);
@@ -203,7 +203,7 @@ void sys_GetCommandLine( PA_PluginParameters params )
 //  PURPOSE:	Get window styles
 //
 //  COMMENTS:	outputs in array the applicable styles for the window
-//						Returns via return code the long representing the value
+//						Returns via return code the LONG_PTR representing the value
 //        
 //	DATE:			dcc 07/18/02 dcc
 //
@@ -212,7 +212,7 @@ void sys_GetCommandLine( PA_PluginParameters params )
 void gui_GetWindowStyle	( PA_PluginParameters params )
 {
 	PA_Variable			styles;
-	long						returnValue = 0, testValue = 0, i;
+	LONG_PTR						returnValue = 0, testValue = 0, i;
 	HWND						hWnd;
 	char						styleText[40];
 	BOOL						bFoundOne;
@@ -344,7 +344,7 @@ void gui_GetWindowStyle	( PA_PluginParameters params )
 
 void gui_RestrictWindow( PA_PluginParameters params )
 {
-	long				action = 0, returnValue = 0, styleChg = 0, numDeleted = 0;
+	LONG_PTR				action = 0, returnValue = 0, styleChg = 0, numDeleted = 0;
 	HWND				hWnd = NULL;
 	HMENU				hSysMenu;
 	WNDPROC			wpProc = NULL;
@@ -399,14 +399,14 @@ void gui_RestrictWindow( PA_PluginParameters params )
 			init_list(&startOfList);
 		}
 		// insert item in linked list -- if not already there
-		if (!search_list( &startOfList, &thisLink, &previousLink, LL_hWnd, LL_Restrict, (long *) &hWnd)) {
+		if (!search_list( &startOfList, &thisLink, &previousLink, LL_hWnd, LL_Restrict, (LONG_PTR *) &hWnd)) {
 			thisLink = (pLL) insert_list(&startOfList);
 			if (thisLink == NULL) {
 				PA_ReturnLong( params, -1 ); // could not add to list - get out
 				return;
 			}
 		} else {
-			PA_ReturnLong( params, (long)hWnd ); // return window handle if already in list
+			PA_ReturnLong( params, (LONG_PTR)hWnd ); // return window handle if already in list
 			return;
 		}
 
@@ -439,23 +439,23 @@ void gui_RestrictWindow( PA_PluginParameters params )
 
 LRESULT APIENTRY ProToolsProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-	long				action = 0, command = 0, hitArea = 0, styleChg = 0;
+	LONG_PTR				action = 0, command = 0, hitArea = 0, styleChg = 0;
 	pLL					currentLink, prevLink;
 	RECT				rect,	clientRect, workingAreaRect;
-	long				x = 0, y = 0, xFrame, yFrame;
-	int					mnuItemCount, i;
+	LONG_PTR				x = 0, y = 0, xFrame, yFrame;
+	INT_PTR					mnuItemCount, i;
 	HMENU				hMenu;
 	BOOL				bFuncReturn;
 	LPMINMAXINFO		lpmmi; //01/18/03
-	static long			InCommand = 0; // 01/18/03
+	static LONG_PTR			InCommand = 0; // 01/18/03
 	POINT				pt; // 01/19/03
 	LPWINDOWPOS			lpwp;
 	LPNCCALCSIZE_PARAMS	lpcalcsize;
 	static HWND			currentChildMaxed = NULL, prevChildMaxed = NULL;
 	//char*				minimizedWindows[32];
 	char				title[128];
-	int					n = 0, err = 0;
-	int					minimizedPerRow; // REB 8/11/08 #16207
+	INT_PTR					n = 0, err = 0;
+	INT_PTR					minimizedPerRow; // REB 8/11/08 #16207
 
 	currentLink = NULL;
 	prevLink = NULL;
@@ -586,7 +586,7 @@ LRESULT APIENTRY ProToolsProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 					return 0;
 				}
 
-				if (currentChildMaxed == hwnd) { //(toolBarRestrictions.appBeingMaxed == (long)hwnd) {
+				if (currentChildMaxed == hwnd) { //(toolBarRestrictions.appBeingMaxed == (LONG_PTR)hwnd) {
 					lpwp->x = toolBarRestrictions.left - xFrame;
 					lpwp->y = toolBarRestrictions.top - yFrame;
 					lpwp->cx = rect.right - rect.left + (2 * xFrame) - toolBarRestrictions.left - toolBarRestrictions.right;
@@ -633,7 +633,7 @@ LRESULT APIENTRY ProToolsProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 						prevChildMaxed = currentChildMaxed;
 						currentChildMaxed = hwnd;
 					}
-					toolBarRestrictions.appBeingMaxed = (long)currentChildMaxed; //was XCHANGING_MAX_WINDOWS
+					toolBarRestrictions.appBeingMaxed = (LONG_PTR)currentChildMaxed; //was XCHANGING_MAX_WINDOWS
 				}
 				break;
 
@@ -704,7 +704,7 @@ LRESULT APIENTRY ProToolsProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 		if ((uMsg == WM_SYSCOMMAND) || (uMsg == WM_NCHITTEST) || (uMsg == WM_INITMENU)) {
 
-			if (search_list( &startOfList, &currentLink, &prevLink, LL_hWnd, LL_Restrict, (long *) &hwnd)) {
+			if (search_list( &startOfList, &currentLink, &prevLink, LL_hWnd, LL_Restrict, (LONG_PTR *) &hwnd)) {
 		
 				action = currentLink->dataLong1;
 
@@ -798,11 +798,11 @@ LRESULT APIENTRY ProToolsProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 						break;
 
 					case (WM_DESTROY) :
-						delete_list(&startOfList, LL_hWnd, LL_Restrict, (long *) &hwnd);
+						delete_list(&startOfList, LL_hWnd, LL_Restrict, (LONG_PTR *) &hwnd);
 						break;
 
 				} // end switch (uMsg)
-			} // end if (search_list( &startOfList, &currentLink, &prevLink, LL_hWnd, LL_Restrict, (long *) &hwnd))
+			} // end if (search_list( &startOfList, &currentLink, &prevLink, LL_hWnd, LL_Restrict, (LONG_PTR *) &hwnd))
 		} // end if ((uMsg == WM_SYSCOMMAND) || (uMsg == WM_NCHITTEST) || (uMsg == WM_INITMENU))
 	} // end if (startOfList != NULL)
 	
@@ -829,7 +829,7 @@ LRESULT APIENTRY ProToolsProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 void gui_SubClassInit( PA_PluginParameters params ) 
 {
-	long				returnValue = 0, action = 0;
+	LONG_PTR				returnValue = 0, action = 0;
 	//WNDCLASSEX			wndClassEx;
 	//LPWNDCLASSEX		lpWndClassEx = &wndClassEx;
 	//char				className[] = "ProToolsSubMDIWndClass";
@@ -843,7 +843,7 @@ void gui_SubClassInit( PA_PluginParameters params )
 		if (processHandles.wpProToolsOrigProc == NULL) {
 
 			processHandles.wpProToolsOrigProc = (WNDPROC) SetClassLongPtr(windowHandles.MDIs_4DhWnd, GCLP_WNDPROC, (LONG_PTR)ProToolsProc);
-			returnValue = (long) processHandles.wpProToolsOrigProc;
+			returnValue = (LONG_PTR) processHandles.wpProToolsOrigProc;
 
 			/*
 			//hInst = (HINSTANCE) PA_Get4DHInstance(); // this doesn't work for 4D 6.5
@@ -855,7 +855,7 @@ void gui_SubClassInit( PA_PluginParameters params )
 			if (GetClassInfoEx(hInst, className, lpWndClassEx)) {
 				wndClassEx.lpfnWndProc = &ProToolsProc;
 				processHandles.wpProToolsOrigProc = (WNDPROC) SetClassLongPtr(windowHandles.MDIs_4DhWnd, GCLP_WNDPROC, (LONG_PTR)ProToolsProc);
-				returnValue = (long) processHandles.wpProToolsOrigProc;
+				returnValue = (LONG_PTR) processHandles.wpProToolsOrigProc;
 			}
 			*/
 		}
@@ -888,7 +888,7 @@ void gui_SubClassInit( PA_PluginParameters params )
 void gui_GetWindowState( PA_PluginParameters params )
 {
 	HWND			hWnd;
-	long			returnValue = 0;
+	LONG_PTR			returnValue = 0;
 
 
 	hWnd = (HWND) PA_GetLongParameter( params, 1);
@@ -921,7 +921,7 @@ void gui_GetWindowState( PA_PluginParameters params )
 
 void gui_SetWindowStyle( PA_PluginParameters params )
 {
-	long				StyleCurr = 0, StyleNew = 0, action = 0;
+	LONG_PTR				StyleCurr = 0, StyleNew = 0, action = 0;
 	HWND				hWnd = NULL;
 	HMENU				hSysMenu;
 	pLL					thisLink = NULL, previousLink = NULL;
@@ -975,7 +975,7 @@ void gui_SetWindowStyle( PA_PluginParameters params )
 			}
 
 			// insert item in linked list -- if not already there
-			if (!search_list( &startOfList, &thisLink, &previousLink, LL_hWnd, LL_Restrict, (long *) &hWnd)) {
+			if (!search_list( &startOfList, &thisLink, &previousLink, LL_hWnd, LL_Restrict, (LONG_PTR *) &hWnd)) {
 				thisLink = (pLL) insert_list(&startOfList);
 				if (thisLink == NULL) {
 					PA_ReturnLong( params, -2 );
@@ -993,7 +993,7 @@ void gui_SetWindowStyle( PA_PluginParameters params )
 
 			// no subclass or no list head, we're done
 			if(( NULL != processHandles.wpProToolsOrigProc ) && ( NULL != startOfList)) {
-				delete_list( &startOfList, LL_hWnd, LL_Restrict, (long *) &hWnd);
+				delete_list( &startOfList, LL_hWnd, LL_Restrict, (LONG_PTR *) &hWnd);
 			}
 		}
 
@@ -1036,7 +1036,7 @@ void sys_FileExists( PA_PluginParameters params ){
 	char *file = NULL;
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFindFile;
-	long ret=0; // assume file doesn't exist
+	LONG_PTR ret=0; // assume file doesn't exist
 	
 	file = getTextParameter(params, 1);
 
@@ -1071,10 +1071,10 @@ void sys_FileExists( PA_PluginParameters params ){
 
 void sys_DirectoryExists( PA_PluginParameters params ){
 	char *directory = NULL;
-	long length;
+	LONG_PTR length;
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFindFile;
-	long ret=0; // assume directory doesn't exist
+	LONG_PTR ret=0; // assume directory doesn't exist
 	
     // retrieve the directory manual
 	length = PA_GetTextParameter( params, 1, 0L );

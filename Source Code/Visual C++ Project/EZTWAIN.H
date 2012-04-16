@@ -64,7 +64,7 @@ typedef HANDLE HDIB;
 
 //--------- Basic calls
 
-HANDLE EZTAPI TWAIN_AcquireNative(HWND hwndApp, unsigned wPixTypes, long *lErr);
+HANDLE EZTAPI TWAIN_AcquireNative(HWND hwndApp, unsigned wPixTypes, LONG_PTR *lErr);
 // The minimal use of EZTWAIN.DLL is to just call this routine, with 0 for
 // both params.  EZTWAIN creates a window if hwndApp is 0.
 //
@@ -104,7 +104,7 @@ void EZTAPI TWAIN_FreeNative(HANDLE hdib);
 // 400 dpi       20KB              160KB              480KB
 //
 
-int EZTAPI TWAIN_AcquireToClipboard(HWND hwndApp, unsigned wPixTypes);
+INT_PTR EZTAPI TWAIN_AcquireToClipboard(HWND hwndApp, unsigned wPixTypes);
 // Like AcquireNative, but puts the resulting image, if any, into the system
 // clipboard.  Under Windows, this will put a CF_DIB item in the clipboard
 // if successful.  If this call fails, the clipboard is either empty or
@@ -115,7 +115,7 @@ int EZTAPI TWAIN_AcquireToClipboard(HWND hwndApp, unsigned wPixTypes);
 // use of a DIB handle.  In fact, TWAIN_AcquireToClipboard uses
 // TWAIN_AcquireNative for all the hard work.
 
-int EZTAPI TWAIN_AcquireToFilename(HWND hwndApp, LPCSTR pszFile);
+INT_PTR EZTAPI TWAIN_AcquireToFilename(HWND hwndApp, LPCSTR pszFile);
 // Acquire an image and write it to a .BMP (Windows Bitmap) file.
 // The file name and path in pszFile are used.  If pszFile is NULL or
 // points to an empty string, the user is prompted with a Save File dialog.
@@ -126,7 +126,7 @@ int EZTAPI TWAIN_AcquireToFilename(HWND hwndApp, LPCSTR pszFile);
 // -3 (weird) unable to lock DIB - probably an invalid handle.
 // -4 writing BMP data failed, possibly output device is full
 
-int EZTAPI TWAIN_SelectImageSource(HWND hwnd);
+INT_PTR EZTAPI TWAIN_SelectImageSource(HWND hwnd);
 // This is the routine to call when the user chooses the "Select Source..."
 // menu command from your application's File menu.  Your app has one of
 // these, right?  The TWAIN spec calls for this feature to be available in
@@ -153,18 +153,18 @@ int EZTAPI TWAIN_SelectImageSource(HWND hwnd);
 
 //--------- Basic TWAIN Inquiries
 
-int EZTAPI TWAIN_IsAvailable(void);
+INT_PTR EZTAPI TWAIN_IsAvailable(void);
 // Call this function any time to find out if TWAIN is installed on the
 // system.  It takes a little time on the first call, after that it's fast,
 // just testing a flag.  It returns 1 if the TWAIN Source Manager is
 // installed & can be loaded, 0 otherwise. 
 
 
-int EZTAPI TWAIN_EasyVersion(void);
+INT_PTR EZTAPI TWAIN_EasyVersion(void);
 // Returns the version number of EZTWAIN.DLL, multiplied by 100.
 // So e.g. version 2.01 will return 201 from this call.
 
-int EZTAPI TWAIN_State(void);
+INT_PTR EZTAPI TWAIN_State(void);
 // Returns the TWAIN Protocol State per the spec.
 #define TWAIN_PRESESSION		1	// source manager not loaded
 #define TWAIN_SM_LOADED			2	// source manager loaded
@@ -176,19 +176,19 @@ int EZTAPI TWAIN_State(void);
 
 //--------- DIB handling utilities ---------
 
-int EZTAPI TWAIN_DibDepth(HANDLE hdib);
+INT_PTR EZTAPI TWAIN_DibDepth(HANDLE hdib);
 // Depth of DIB, in bits i.e. bits per pixel.
-int EZTAPI TWAIN_DibWidth(HANDLE hdib);
+INT_PTR EZTAPI TWAIN_DibWidth(HANDLE hdib);
 // Width of DIB, in pixels (columns)
-int EZTAPI TWAIN_DibHeight(HANDLE hdib);
+INT_PTR EZTAPI TWAIN_DibHeight(HANDLE hdib);
 // Height of DIB, in lines (rows)
-int EZTAPI TWAIN_DibNumColors(HANDLE hdib);
+INT_PTR EZTAPI TWAIN_DibNumColors(HANDLE hdib);
 // Number of colors in color table of DIB
 
-long EZTAPI DIB_RowBytes(HDIB hdib);
+size_t EZTAPI DIB_RowBytes(HDIB hdib); // REB 3/30/11 #25290 Change LONG_PTR to size_t
 // Number of bytes needed to store one row of the DIB.
 
-void EZTAPI DIB_ReadRow(HANDLE hdib, int nRow, BYTE* prow);
+void EZTAPI DIB_ReadRow(HANDLE hdib, INT_PTR nRow, BYTE* prow);
 // Read row n of the given DIB into buffer at prow.
 // Caller is responsible for ensuring buffer is large enough.
 // Row 0 is the *top* row of the image, as it would be displayed.
@@ -200,10 +200,10 @@ HPALETTE EZTAPI TWAIN_CreateDibPalette(HANDLE hdib);
 
 void EZTAPI TWAIN_DrawDibToDC(
 		HDC hDC,		// destination device context
-		int dx, int dy,	// destination (x,y)
-		int w, int h,	// width and height
+		INT_PTR dx, INT_PTR dy,	// destination (x,y)
+		INT_PTR w, INT_PTR h,	// width and height
 		HANDLE hdib,	// DIB handle
-		int sx, int sy	// source (x,y) in DIB
+		INT_PTR sx, INT_PTR sy	// source (x,y) in DIB
 		);
 // Draws a DIB on a device context.
 // You should call CreateDibPalette, select that palette
@@ -211,7 +211,7 @@ void EZTAPI TWAIN_DrawDibToDC(
 
 //--------- BMP file utilities
  
-int EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile);
+INT_PTR EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile);
 // Writes a DIB handle to a .BMP file
 //
 // hdib		= DIB handle, as returned by TWAIN_AcquireNative
@@ -226,7 +226,7 @@ int EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile);
 //	-3	(weird) unable to lock DIB - probably an invalid handle.
 //	-4	writing BMP data failed, possibly output device is full
 
-int EZTAPI TWAIN_WriteNativeToFile(HANDLE hdib, HFILE fh);
+INT_PTR EZTAPI TWAIN_WriteNativeToFile(HANDLE hdib, HFILE fh);
 // Writes a DIB to a file in .BMP format.
 //
 // hdib		= DIB handle, as returned by TWAIN_AcquireNative
@@ -244,8 +244,8 @@ HANDLE EZTAPI TWAIN_LoadNativeFromFile(HFILE fh);
 // Like LoadNativeFromFilename, but takes an already open file handle.
 
 
-void EZTAPI TWAIN_SetHideUI(int fHide);
-int EZTAPI TWAIN_GetHideUI(void);
+void EZTAPI TWAIN_SetHideUI(INT_PTR fHide);
+INT_PTR EZTAPI TWAIN_GetHideUI(void);
 // These functions control the 'hide source user interface' flag.
 // This flag is cleared initially, but if you set it non-zero, then when
 // a source is enabled it will be asked to hide its user interface.
@@ -259,10 +259,10 @@ int EZTAPI TWAIN_GetHideUI(void);
 //--------- Application Registration
 
 void EZTAPI TWAIN_RegisterApp(
-	int   nMajorNum,     // major and incremental revision of application.
-   int   nMinorNum,     // e.g. version 4.5: nMajorNum = 4, nMinorNum = 5
-	int   nLanguage,     // (human) language (use TWLG_xxx from TWAIN.H)
-	int   nCountry,      // country (use TWCY_xxx from TWAIN.H)
+	INT_PTR   nMajorNum,     // major and incremental revision of application.
+   INT_PTR   nMinorNum,     // e.g. version 4.5: nMajorNum = 4, nMinorNum = 5
+	INT_PTR   nLanguage,     // (human) language (use TWLG_xxx from TWAIN.H)
+	INT_PTR   nCountry,      // country (use TWCY_xxx from TWAIN.H)
 	LPSTR lpszVersion,   // version info string e.g. "1.0b3 Beta release"
 	LPSTR lpszMfg,       // name of mfg/developer e.g. "Crazbat Software"
 	LPSTR lpszFamily,    // product family e.g. "BitStomper"
@@ -297,44 +297,44 @@ void EZTAPI TWAIN_ReportLastError(LPCSTR pzMsg);
 
 //--------- TWAIN State Control ------------------------------------
 
-int EZTAPI TWAIN_LoadSourceManager(void);
+INT_PTR EZTAPI TWAIN_LoadSourceManager(void);
 // Finds and loads the Data Source Manager, TWAIN.DLL.
 // If Source Manager is already loaded, does nothing and returns TRUE.
 // This can fail if TWAIN.DLL is not installed (in the right place), or
 // if the library cannot load for some reason (insufficient memory?) or
 // if TWAIN.DLL has been corrupted.
 
-int EZTAPI TWAIN_OpenSourceManager(HWND hwnd);
+INT_PTR EZTAPI TWAIN_OpenSourceManager(HWND hwnd);
 // Opens the Data Source Manager, if not already open.
 // If the Source Manager is already open, does nothing and returns TRUE.
 // This call will fail if the Source Manager is not loaded.
 
-int EZTAPI TWAIN_OpenDefaultSource(void);
+INT_PTR EZTAPI TWAIN_OpenDefaultSource(void);
 // This opens the source selected in the Select Source dialog.
 // If a source is already open, does nothing and returns TRUE.
 // Fails if the source manager is not loaded and open.
 
-int EZTAPI TWAIN_EnableSource(HWND hwnd);
+INT_PTR EZTAPI TWAIN_EnableSource(HWND hwnd);
 // Enables the open Data Source. This posts the source's user interface
 // and allows image acquisition to begin.  If the source is already enabled,
 // this call does nothing and returns TRUE.
 
-int EZTAPI TWAIN_DisableSource(void);
+INT_PTR EZTAPI TWAIN_DisableSource(void);
 // Disables the open Data Source, if any.
 // This closes the source's user interface.
 // If there is not an enabled source, does nothing and returns TRUE.
 
-int EZTAPI TWAIN_CloseSource(void);
+INT_PTR EZTAPI TWAIN_CloseSource(void);
 // Closes the open Data Source, if any.
 // If the source is enabled, disables it first.
 // If there is not an open source, does nothing and returns TRUE.
 
-int EZTAPI TWAIN_CloseSourceManager(HWND hwnd);
+INT_PTR EZTAPI TWAIN_CloseSourceManager(HWND hwnd);
 // Closes the Data Source Manager, if it is open.
 // If a source is open, disables and closes it as needed.
 // If the Source Manager is not open, does nothing and returns TRUE.
 
-int EZTAPI TWAIN_UnloadSourceManager(void);
+INT_PTR EZTAPI TWAIN_UnloadSourceManager(void);
 // Unloads the Data Source Manager i.e. TWAIN.DLL - releasing
 // any associated memory or resources.
 // This call will fail if the Source Manager is open, otherwise
@@ -343,7 +343,7 @@ int EZTAPI TWAIN_UnloadSourceManager(void);
 
 #ifndef _XDEFS_
 
-int EZTAPI TWAIN_MessageHook(LPMSG lpmsg);
+INT_PTR EZTAPI TWAIN_MessageHook(LPMSG lpmsg);
 // This function detects Windows messages that should be routed
 // to an enabled Data Source, and picks them off.  In a full TWAIN
 // app, TWAIN_MessageHook is called inside the main GetMessage loop.
@@ -358,25 +358,25 @@ int EZTAPI TWAIN_MessageHook(LPMSG lpmsg);
 
 #endif
 
-HANDLE EZTAPI TWAIN_WaitForNativeXfer(HWND hwnd, long *lErr); // REB 7/1/09 Added second parameter for error tracking.
+HANDLE EZTAPI TWAIN_WaitForNativeXfer(HWND hwnd, LONG_PTR *lErr); // REB 7/1/09 Added second parameter for error tracking.
 
 void EZTAPI TWAIN_ModalEventLoop(void);
 // Process messages until termination, source disable, or image transfer.
 
 
-int EZTAPI TWAIN_EndXfer(void);
+INT_PTR EZTAPI TWAIN_EndXfer(void);
 
-int EZTAPI TWAIN_AbortAllPendingXfers(void);
+INT_PTR EZTAPI TWAIN_AbortAllPendingXfers(void);
 
 
 //--------- High-level Capability Negotiation Functions --------
 
-int EZTAPI TWAIN_NegotiateXferCount(int nXfers);
+INT_PTR EZTAPI TWAIN_NegotiateXferCount(INT_PTR nXfers);
 // Negotiate with open Source the number of images application will accept.
 // This is only allowed in State 4 (TWAIN_SOURCE_OPEN)
 // nXfers = -1 means any number
 
-int EZTAPI TWAIN_NegotiatePixelTypes(unsigned wPixTypes);
+INT_PTR EZTAPI TWAIN_NegotiatePixelTypes(unsigned wPixTypes);
 // Negotiate with the source to restrict pixel types that can be acquired.
 // This tries to restrict the source to a *set* of pixel types,
 // See TWAIN_AcquireNative above for some mask constants.
@@ -385,27 +385,27 @@ int EZTAPI TWAIN_NegotiatePixelTypes(unsigned wPixTypes);
 // You should not assume that the source will honor your restrictions, even
 // if this call succeeds!
 
-int EZTAPI TWAIN_GetCurrentUnits(void);
+INT_PTR EZTAPI TWAIN_GetCurrentUnits(void);
 // Ask the source what its current unit of measure is.
 // If anything goes wrong, this function just returns TWUN_INCHES (0).
 
-int EZTAPI TWAIN_SetCurrentUnits(int nUnits);
+INT_PTR EZTAPI TWAIN_SetCurrentUnits(INT_PTR nUnits);
 // Set the current unit of measure for the source.
 // Unit of measure codes are in TWAIN.H, but TWUN_INCHES is 0.
 
-int EZTAPI TWAIN_GetBitDepth(void);
+INT_PTR EZTAPI TWAIN_GetBitDepth(void);
 // Get the current bitdepth, which can depend on the current PixelType.
 // Bit depth is per color channel e.g. 24-bit RGB has bit depth 8.
 // If anything goes wrong, this function returns 0.
 
-int EZTAPI TWAIN_SetBitDepth(int nBits);
+INT_PTR EZTAPI TWAIN_SetBitDepth(INT_PTR nBits);
 // (Try to) set the current bitdepth (for the current pixel type).
 
-int EZTAPI TWAIN_GetPixelType(void);
+INT_PTR EZTAPI TWAIN_GetPixelType(void);
 // Ask the source for the current pixel type.
 // If anything goes wrong (it shouldn't), this function returns 0 (TWPT_BW).
 
-int EZTAPI TWAIN_SetCurrentPixelType(int nPixType);
+INT_PTR EZTAPI TWAIN_SetCurrentPixelType(INT_PTR nPixType);
 // (Try to) set the current pixel type for acquisition.
 // This is only allowed in State 4 (TWAIN_SOURCE_OPEN)
 // The source may select this pixel type, but don't assume it will.
@@ -419,22 +419,22 @@ double EZTAPI TWAIN_GetYResolution(void);
 // Returns the current vertical resolution, in dots per *current unit*.
 // In the event of failure, returns 0.0.
 
-int EZTAPI TWAIN_SetCurrentResolution(double dRes);
+INT_PTR EZTAPI TWAIN_SetCurrentResolution(double dRes);
 // (Try to) set the current resolution for acquisition.
 // Resolution is in dots per current unit! (See TWAIN_GetCurrentUnits above)
 // This is only allowed in State 4 (TWAIN_SOURCE_OPEN)
 // Note: The source may select this resolution, but don't assume it will.
 
-int EZTAPI TWAIN_SetContrast(double dCon);
+INT_PTR EZTAPI TWAIN_SetContrast(double dCon);
 // (Try to) set the current contrast for acquisition.
 // The TWAIN standard says that the range for this cap is -1000 ... +1000
 
-int EZTAPI TWAIN_SetBrightness(double dBri);
+INT_PTR EZTAPI TWAIN_SetBrightness(double dBri);
 // (Try to) set the current brightness for acquisition.
 // The TWAIN standard says that the range for this cap is -1000 ... +1000
 
-int EZTAPI TWAIN_SetXferMech(int mech);
-int EZTAPI TWAIN_XferMech(void);
+INT_PTR EZTAPI TWAIN_SetXferMech(INT_PTR mech);
+INT_PTR EZTAPI TWAIN_XferMech(void);
 // (Try to) set or get the transfer mode - one of the following:
 #define XFERMECH_NATIVE    0
 #define XFERMECH_FILE      1
@@ -445,15 +445,15 @@ int EZTAPI TWAIN_XferMech(void);
 // Setting a capability is valid only in State 4 (TWAIN_SOURCE_OPEN)
 // Getting a capability is valid in State 4 or any higher state.
  
-int EZTAPI TWAIN_SetCapOneValue(unsigned Cap,
+INT_PTR EZTAPI TWAIN_SetCapOneValue(unsigned Cap,
                                 unsigned ItemType,
-                                long ItemVal);
+                                LONG_PTR ItemVal);
 // Do a DAT_CAPABILITY/MSG_SET, on capability 'Cap' (e.g. ICAP_PIXELTYPE,
 // CAP_AUTOFEED, etc.) using a TW_ONEVALUE container with the given item type
 // and value.  The item value must fit into 32 bits.
 // Returns TRUE (1) if successful, FALSE (0) otherwise.
 
-int EZTAPI TWAIN_GetCapCurrent(unsigned Cap,
+INT_PTR EZTAPI TWAIN_GetCapCurrent(unsigned Cap,
                                unsigned ItemType,
                                LPVOID   pVal);
 // Do a DAT_CAPABILITY/MSG_GETCURRENT on capability 'Cap'.
@@ -463,25 +463,25 @@ int EZTAPI TWAIN_GetCapCurrent(unsigned Cap,
 // returned container is incompatible with the expected TWTY_ type in nType,
 // returns FALSE.  If this function returns FALSE, *pVal is not touched.
 
-long EZTAPI TWAIN_ToFix32(double d);
+LONG_PTR EZTAPI TWAIN_ToFix32(double d);
 // Convert a floating-point value to a 32-bit TW_FIX32 value that can be passed
 // to e.g. TWAIN_SetCapOneValue
 
-double EZTAPI TWAIN_Fix32ToFloat(long nfix);
+double EZTAPI TWAIN_Fix32ToFloat(LONG_PTR nfix);
 // Convert a TW_FIX32 value (as returned from some capability inquiries)
 // to a double (floating point) value.
 
 //--------- Lowest-level functions for TWAIN protocol --------
 
 
-int EZTAPI TWAIN_DS(unsigned long DG, unsigned DAT, unsigned MSG, LPVOID pData);
+INT_PTR EZTAPI TWAIN_DS(ULONG_PTR DG, unsigned DAT, unsigned MSG, LPVOID pData);
 // Passes the triplet (DG, DAT, MSG, pData) to the open data source if any.
 // Returns 1 (TRUE) if the result code is TWRC_SUCCESS, 0 (FALSE) otherwise.
 // The last result code can be retrieved with TWAIN_GetResultCode(), and the corresponding
 // condition code can be retrieved with TWAIN_GetConditionCode().
 // If no source is open this call will fail, result code TWRC_FAILURE, condition code TWCC_NODS.
 
-int EZTAPI TWAIN_Mgr(unsigned long DG, unsigned DAT, unsigned MSG, LPVOID pData);
+INT_PTR EZTAPI TWAIN_Mgr(ULONG_PTR DG, unsigned DAT, unsigned MSG, LPVOID pData);
 // Passes a triplet to the Data Source Manager (DSM).
 // Returns 1 (TRUE) if the result code is TWRC_SUCCESS, 0 (FALSE) otherwise.
 // The last result code can be retrieved with TWAIN_GetResultCode(), and the corresponding

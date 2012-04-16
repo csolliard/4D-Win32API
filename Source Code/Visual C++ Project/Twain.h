@@ -123,10 +123,10 @@ typedef char    TW_STR255[256],   FAR *pTW_STR255;
 /* Numeric types. */
 typedef char           TW_INT8,   FAR *pTW_INT8;
 typedef short          TW_INT16,  FAR *pTW_INT16; 
-typedef long           TW_INT32,  FAR *pTW_INT32;
+typedef LONG_PTR           TW_INT32,  FAR *pTW_INT32;
 typedef unsigned char  TW_UINT8,  FAR *pTW_UINT8;
 typedef unsigned short TW_UINT16, FAR *pTW_UINT16;
-typedef unsigned long  TW_UINT32, FAR *pTW_UINT32;
+typedef ULONG_PTR  TW_UINT32, FAR *pTW_UINT32;
 typedef unsigned short TW_BOOL,   FAR *pTW_BOOL; 
 
 /* Fixed point structure type. */
@@ -475,7 +475,7 @@ typedef struct {
    TW_STR255  OutputName; /* The result of an operation or the name of a destination file */
    TW_MEMREF  Context; /* Source specific data used to remember state information */
    /* DG_CONTROL / DAT_FILESYSTEM / MSG_DELETE field    */
-   int        Recursive; /* recursively delete all sub-directories */
+   INT_PTR        Recursive; /* recursively delete all sub-directories */
    /* DG_CONTROL / DAT_FILESYSTEM / MSG_GETINFO fields  */
    TW_INT32   FileType; /* One of the TWFT_xxxx values */
    TW_UINT32  Size; /* Size of current FileType */

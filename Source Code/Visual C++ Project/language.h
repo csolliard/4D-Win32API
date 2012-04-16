@@ -3,7 +3,7 @@
 ** Definition of the messages used.
 */
 
-struct message_list{
+struct message_list {
 	char *InvalidOperation;
 	char *InvalidShowConstant;
 	char *FileNotFound;

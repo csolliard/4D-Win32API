@@ -5,7 +5,7 @@
 // File : EntryPoints.h
 // Description : Describes the entrypoints numbers as implemented in 4D
 //
-// rev : 2004.7
+// rev : 12.0
 //
 // ---------------------------------------------------------------
 
@@ -45,15 +45,14 @@
 #define  EX_USE_SET									-29		// PA_UseSet
 #define  EX_EXECUTE_METHOD							-30		// PA_ExecuteMethod
 #define  EX_EXECUTE_FUNCTION						-31		// PA_ExecuteFunction
-#define  EX_CREATE_METHOD							-32		//PA_CreateMethod
+#define  EX_CREATE_METHOD							-32		// PA_CreateMethod
 	// 31->38 unused									
 #define  EX_LOCKED									-40		// PA_Locked
 #define  EX_READ_WRITE								-41		// PA_ReadWrite, PA_ReadOnly
 #define  EX_LOAD_RECORD								-42		// PA_LoadRecord
 #define  EX_RELATE_ONE								-43		// PA_RelateOne
 #define  EX_RELATE_MANY								-44		// PA_RelateMany
-	// 45 obsolete										
-#define  EX_REDRAW_WINDOW							-46		// PA_RedrawWindow
+	// 45, 46 obsolete										
 #define  EX_STRING									-47		// PA_FormatString
 #define  EX_POPUP_FIELD_LIST						-48		// PA_FieldPopup
 #define  EX_POPUP_TABLE_LIST						-49		// PA_TableAndFieldPopup
@@ -65,7 +64,7 @@
 															// PA_IsWebProcess, PA_GetMessagesStatus
 #define  EX_MESSAGES								-57		// PA_SetMessagesStatus
 	// 58, 59 : hotlinks, obsoletes						
-#define  EX_COMPARE_STRINGS							-60		// PA_CompareStrings
+#define  EX_COMPARE_MACSTRINGS						-60		// PA_CompareMacStrings
 #define  EX_EVAL_NUMBER								-61		// PA_EvalReal, PA_EvalLongint
 	// 62, 63 : hotlinks, obsoletes						
 #define  EX_FIND_PACKAGE							-64		// PA_FindPackage
@@ -73,7 +72,7 @@
 #define  EX_CHANGE_TITLE							-66		// PA_SetPluginWindowTitle
 #define  EX_OPEN_PLUGIN_WINDOW						-67		// PA_OpenPluginWindow
 #define  EX_CLOSE_PLUGIN_WINDOW						-68		// PA_ClosePluginWindow
-#define  EX_GET_4D_GROW_ZONE						-69		// PA_SetGrowZone
+	// 69 deprecated
 	// 70, 71, 72 : hotlinks, obsoletes					
 #define  EX_RECORD_NUMBER							-73		// PA_RecordNumber
 #define  EX_ADD_TO_SET								-74		// PA_AddToSet
@@ -105,27 +104,23 @@
 #define  EX_SAVE_DOCUMENT							-101	// PA_SendDocument
 #define  EX_READ_DATA								-102	// PA_ReceiveDataFromServer
 #define  EX_WRITE_DATA								-103	// PA_SendDataToServer
-#define  EX_OPEN_PRINTER							-104	// PA_TakePrinter
-#define  EX_RELEASE_PRINTER							-105	// PA_ReleasePrinter
-#define  EX_PERFORM_LOG_ACTION						-106	// PA_PerformLogAction
+	// 104, 105, 106 obsolete
 #define  EX_LOCK_DATABASE							-107	// PA_LockDatabase
 #define  EX_UNLOCK_DATABASE							-108	// PA_UnlockDatabase
 	// 109,110,111 reserved								
 #define  EX_GET_USER_LIST							-112	// PA_CountUsers
 	// 113, 114 reserved								
-#define  EX_GET_PREF_FILE							-115	// PA_Get4DPreferencesFilename
-#define  EX_DETOKENIZE_IN_TEHANDLE					-116	// PA_DetokenizeInTEHandle
-#define  EX_FIND_PROCID								-117	// PA_GetMethodID
+#define  EX_GET_PREF_FILE							-115	// PA_Get4DPreferencesFilePath
+	// 116, 117 obsolete
 #define  EX_CALL_BY_PROCID							-118	// PA_ExecuteMethodByID
-#define  EX_TRY_TO_TAKE_PRINTER						-120	// PA_TryToTakePrinter
+	// 119, 120 obsolete
 #define  EX_THERMOMETER								-121	// PA_SetThermometerRect
 #define  EX_YIELD_ABSOLUTE							-122	// PA_YieldAbsolute
 	// 123, 124 reserved								
 #define  EX_GET_INTERPROCESS_VARIABLE				-125	// PA_GetVariable
 #define  EX_SET_INTERPROCESS_VARIABLE				-126	// PA_SetVariable
 #define  EX_EXIST_DOCUMENT_ON_SERVER				-127	// PA_DocumentExistOnServer
-	// 128 reserved								
-#define  EX_GET_MAC_PRINT_INFO						-130	// PA_GetMacPrintInfo
+	// 128 reserved										
 #define  EX_GET_PRINT_INFO							-130	// PA_GetWindowsPRINTDLG, PA_GetWindowsPrintingDC
 															// PA_GetCarbonPageFormat, PA_GetCarbonPrintSettings
 #define  EX_GET_FIELD_RELATIONS						-131	// PA_GetFieldRelation
@@ -133,36 +128,20 @@
 	// 133, 134 obsolete
 #define  EX_UPDATE_PROCESS_VARIABLE					-135	// PA_UpdateProcessVariable
 #define  EX_QUIT4D									-136	// PA_Quit4D
-#define  EX_LOG_INFO								-137	// PA_GetLogInfo, PA_GetLogName
-	// 138->141 reserved								
-#define  EX_OPEN_LOG								-142	// PA_OpenLog
-#define  EX_DETRAP_WAIT_NEXT_EVENT					-143	// PA_DetrapWaitNextEvent
-#define  EX_RETRAP_WAIT_NEXT_EVENT					-144	// PA_RetrapWaitNextEvent
+	// 137->144 obsolete
 #define  EX_GET_GROUP_LIST							-145	// PA_CountUserGroups
-#define  EX_UPDATE_INTERNAL_CACHE					-146	// PA_UpdateInternalCache
-#define  EX_RESTORE_MACOS_ENV						-147	// PA_Remove4DTraps
-#define  EX_RESTORE_MAC4D_ENV						-148	// PA_Restore4DTraps
-	// 146, 144 obsolete
-#define  EX_GET_BACKUP_STATUS						-149	// PA_GetBackupStatus
-#define  EX_GET_LOG_FIELD_TYPE						-150	// PA_GetLogFieldType
-#define  EX_GET_LOG_FIELD_KIND						-150	// PA_GetLogFieldKind
-#define  EX_GET_LOG_FIELD							-151	// PA_GetLogField
-#define  EX_NEW_LOG									-152	// PA_NewLog
-	// 153->157 obsolete
+	// 146, 144, 149->157  obsolete
 #define  EX_NEW_PROCESS								-158	// PA_NewProcess
-#define  EX_GET_4DWIN_MACOS_GLOBALS					-159	// PA_Get4DWinMacOSGlobals
+	// 159 deprecated
 	// 160 reserved
 #define  EX_GET_HWND								-161	// PA_GetHWND, PA_GetHDC
 #define  EX_BYTE_SWAP_TOKENS						-162	// PA_ByteSwapTokens
-#define  EX_GET_4D_SYS_COLORS						-163	// PA_Get4DSysColors
+	// 163	obsolete
 #define  EX_GET_PLATFORM_INTERFACE					-164	// PA_GetPlatformInterface
 #define  EX_POST_EVENT								-165	// PA_PostEvent
 	// 166 reserved
-#define  EX_CREATE_TABLE							-167	// PA_CreateTableRef, PA_AddField, PA_CreateTable
-	// 168 obsolete
+	// 167, 168 obsolete
 #define  EX_PACKAGE_INFO							-169	// PA_PackageInfo
-#define  EX_SET_WEB_LISTENERS						-170	// PA_SetWebListeners
-#define  EX_SET_WEB_FILTERS							-171	// PA_SetWebFilters
 #define  EX_START_WEB_SERVER						-172	// PA_StartWebServer
 #define  EX_STOP_WEB_SERVER							-173	// PA_StopWebServer
 #define  EX_GET_WEB_SERVER_INFO						-174	// PA_GetWebServerInfo
@@ -172,11 +151,10 @@
 #define  EX_GET_TOOLBAR_INFO						-178	// PA_GetToolBarInfo
 #define  EX_SHOW_HIDE_TOOLBAR						-179	// PA_ShowHideToolBar
 #define  EX_DRAG_AND_DROP							-180	// PA_DragAndDrop
-#define  EX_INSTALL_4D_SPELLER						-181	// PA_Install4DSpeller
-#define  EX_GET_4D_SPELLER							-182	// 
+	// 181, 182 obsolete
 #define  EX_INSTALL_4DWRITE_SPELLER					-183	// PA_Install4DWriteSpeller
 #define  EX_GET_4DWRITE_SPELLER						-184	// PA_Get4DWriteSpellerProcPtr
-#define  EX_DETOKENIZE_IN_TEXT						-185	// PA_Detokenize
+#define  EX_DETOKENIZE								-185	// PA_Detokenize
 	// 186 reserved
 	// 187->199 unused
 #define  EX_DIAL4D_NEW_EMPTY_DIALOG					-200	// PA_NewDialog
@@ -279,7 +257,7 @@
 #define  EX_DIAL4D_NEW_ARRAY_TEXT					-331	// PA_Dial4DNewArrayText
 #define  EX_DIAL4D_SET_ARRAY_TEXT					-332	// PA_Dial4DSetArrayText
 #define  EX_DIAL4D_GET_ARRAY_TEXT					-333	// PA_Dial4DGetArrayText
-#define  EX_OPEN_CLOSE_PREFS_FILE					-334	// PA_Open4DPreferencesMacResFile, PA_Close4DPreferences
+// 334 deprecated
 #define  EX_GET_APPLICATION_FULLPATH				-335	// PA_GetApplicationFullPath
 #define  EX_DIAL4D_DISPOSE_EMPTY_DIALOG				-336	// PA_Dial4DDisposeEmptyDialog
 #define  EX_DIAL4D_SHOW_HIDE_OBJECT					-337	// PA_Dial4DShowHideObject
@@ -341,7 +319,7 @@
 #define  EX_METHOD_EDITOR							-423	// PA_MethodEditor
 #define  EX_CONVERT_STRING							-424	// PA_ConvertString
 #define  EX_DIAL4D_CANCEL_VALIDATE					-425	// PA_Dial4DCancelValidate
-#define  EX_GET_PRINTFILE_RESFILE					-426	// PA_GetPrintFileResFile
+	// 426	obsolete
 #define  EX_GET_4D_FOLDER							-427	// PA_Get4DFolder
 #define  EX_DIAL4D_HIGHLIGHT_TEXT					-428	// PA_Dial4DHighlightText
 #define  EX_GET_SERIAL_KEY							-429	// PA_GetSerialKey
@@ -358,16 +336,45 @@
 #define  EX_UNLOCK_RESOURCE							-439	// PA_UnlockResource, PA_UnlockResourceHandle
 #define  EX_METHOD_NAMES							-442	// PA_MethodNames
 
+#define  EX_GET_COMMAND_ID							-506	// PA_GetCommandID
+#define  EX_GET_COMMAND_NAME						-507	// PA_GetCommandName
 #define  EX_GET_METHOD_ID							-508	// PA_GetMethodID
 #define  EX_GET_CENTURY_INFO						-531	// PA_GetCenturyInfo
 #define  EX_OPEN_PRINTER_SESSION					-556	// PA_OpenPrinterSession
 #define  EX_CLOSE_PRINTER_SESSION					-557	// PA_ClosePrinterSession
 #define  EX_TRY_TO_OPEN_PRINTER_SESSION				-558	// PA_TryToOpenPrinterSession
-#define  EX_GET_TEMPLATE							-593	//PA_GetTemplate
+#define  EX_GET_TEMPLATE							-593	// PA_GetTemplate
 
 #define  EX_GET_POINTER_VALUE						-585	// PA_GetPointerValue
 #define  EX_SET_POINTER_VALUE						-586	// PA_SetPointerValue
 
 #define  EX_SET_PLUGINAREA_CLIPMODE					-597	// PA_SetPluginAreaClipMode
 
+#define  EX_COMPARE_UNIBUFFERS						-611	// PA_CompareUniBuffers
+#define  EX_CREATE_UNISTRING						-612	// PA_CreateUniString
+#define  EX_SET_UNISTRING							-613	// PA_SetUniString
+#define  EX_DISPOSE_UNISTRING						-614	// PA_DisposeUniString
+#define  EX_VARIABLE_TO_STRING						-615	// PA_GetStringVariable
+#define  EX_GET_PLUGIN_KEY_EVENT					-616	// PA_GetKey
+
+#define  EX_CREATE_PICTURE							-617	// PA_CreatePicture
+#define  EX_CREATE_NATIVE_PICTURE_FOR_SCREEN		-618	// PA_CreateNativePictureForScreen
+#define  EX_CREATE_NATIVE_PICTURE_FOR_PRINTING		-619	// PA_CreateNativePictureForPrinting
+#define  EX_DISPOSE_PICTURE							-620	// PA_DisposePicture
+#define  EX_PASTEBOARD_IS_DATA_AVAILABLE			-621	// PA_IsPasteboardDataAvailable
+#define  EX_PASTEBOARD_GET_DATA						-622	// PA_GetPasteboardData
+#define  EX_PASTEBOARD_GET_DATA_SIZE				-623	// PA_GetPasteboardDataSize
+#define  EX_PASTEBOARD_SET_DATA						-624	// PA_SetPasteboardData
+#define  EX_GET_DRAG_AND_DROP_PASTEBOARD			-631	// PA_GetDragAndDropPasteboard
+#define  EX_GET_DRAG_AND_DROP_VARIABLE				-635	// PA_GetDragAndDropVariable
+#define  EX_EXECUTE_COMMAND_BY_ID					-636	// PA_ExecuteCommandByID
+#define  EX_LOCALIZE_STRING							-637	// PA_LocalizeStringByID, PA_LocalizeString
+#define  EX_DUPLICATE_PICTURE						-654	// PA_DuplicatePicture
+#define  EX_CREATE_ELEMENTS							-655	// PA_CreateElementsFromXMLDefinition
+#define	 EX_GET_POINTER_VALUE_PROPERTIES			-662	// PA_GetPointerValueProperties
+#define  EX_RUN_IN_MAIN_PROCESS						-663	// PA_RunInMainProcess
+#define  EX_GET_PICTURE_DATA						-671	// PA_GetPictureData	(11.3)
+#define  EX_MODIFY_METHOD							-672	// PA_ModifyMethod
+	// -673,-674 reserved
+#define  EX_CONVERT_CHARSET_TO_CHARSET				-675	// PA_ConvertFromCharset	March 2nd 2009   11.3
 #endif

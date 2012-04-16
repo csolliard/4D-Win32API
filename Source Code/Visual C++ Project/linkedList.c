@@ -32,7 +32,7 @@ void clear_list(pLL *pSOL)
 }
 
 
-BOOL search_list(pLL *pSOL, pLL *thisLink, pLL *previousLink, long dataPosition, long matchType, long* pSearchKey)
+BOOL search_list(pLL *pSOL, pLL *thisLink, pLL *previousLink, LONG_PTR dataPosition, LONG_PTR matchType, LONG_PTR* pSearchKey)
 {
 	BOOL				returnValue = FALSE;
 
@@ -118,7 +118,7 @@ void* insert_list(pLL  *pSOL)
 
 
 
-BOOL delete_list(pLL* pSOL, long dataPosition, long matchType, long *pSearchKey)
+BOOL delete_list(pLL* pSOL, LONG_PTR dataPosition, LONG_PTR matchType, LONG_PTR *pSearchKey)
 {
 	BOOL			bFuncReturn = FALSE;
 	pLL				thisLink = NULL, previousLink = NULL, deleteLink = NULL;
@@ -137,9 +137,9 @@ BOOL delete_list(pLL* pSOL, long dataPosition, long matchType, long *pSearchKey)
 }
 
 
-long length_list(pLL pSOL)
+LONG_PTR length_list(pLL pSOL)
 {
-	long			returnValue = 0;
+	LONG_PTR			returnValue = 0;
 
 	while (pSOL != NULL)
 	{

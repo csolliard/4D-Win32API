@@ -150,8 +150,8 @@ typedef BOOL (CALLBACK* LPFNPROCNEXT) (HANDLE, VOID *);
 
 struct listNode {
      HWND targetWHndl;  // this may not be required
-     long	iconID;
-     long procNbr;
+     LONG_PTR	iconID;
+     LONG_PTR procNbr;
 		 struct listNode* nextPtr;
 };
 
@@ -161,9 +161,9 @@ typedef TI* pTI;
 struct linkedList {
      HWND			hWnd;  
      WNDPROC	wpProc;
-		 long			type;
-     long			dataLong1;
-		 long			dataLong2;
+		 LONG_PTR			type;
+     LONG_PTR			dataLong1;
+		 LONG_PTR			dataLong2;
 		 char*		dataPtrStr;
 		 void*		dataPtr;
 		 struct	linkedList* nextPtr;
@@ -247,7 +247,7 @@ typedef LL* pLL;
 #define MAX_REG_SIZE 16383
 
 // sys_GetDocumentList
-#define INVALID_DIRECTORY 0xFFFFFFFF
+#define INVALID_DIRECTORY 0xFFFFFFFF // Check64
 #define PATHCHAR   '\\'
 #define PATHSTR  "\\"
 #define ARRAY_LOAD_VALUE 10

@@ -8,16 +8,17 @@
 #include <time.h> 
 #include <sys/timeb.h> 
 
+#include "utilities.h"
 #include "PrivateTypes.h"
 #include "EntryPoints.h"
 
 WNDPROC				g_wpOrigMDIProc;
-UINT					g_displayedTTId;
+LONG_PTR					g_displayedTTId; // REB 3/30/11 #25290 Was UINT
 extern char		g_methodText[255];
 BOOL					g_bTriggerMethod;
-//long					g_exitExtProc = 0;
+//LONG_PTR					g_exitExtProc = 0;
 extern BOOL		g_bDragFull;
-extern long		sIsPriorTo67;
+extern LONG_PTR		sIsPriorTo67;
 
 extern struct		WINDOWHANDLES
 {
@@ -65,7 +66,7 @@ void sys_FileCheck( PA_PluginParameters params )
 {
 	HANDLE				hFile;
 	char					fileName[MAX_PATH];
-	long					fileName_len;
+	LONG_PTR					fileName_len;
 	DWORD					lastError;
 
 	fileName_len	= PA_GetTextParameter( params, 1, fileName );
@@ -90,7 +91,7 @@ void sys_FileCheck( PA_PluginParameters params )
 //  PURPOSE:	Creates tool tip control that houses one or more tool tips
 //
 //  COMMENTS:	Requires variables 
-//						1. style (long) TT_BALLOON or TT_RECTANGLE;
+//						1. style (LONG_PTR) TT_BALLOON or TT_RECTANGLE;
 //							default is balloon  
 //						2. option window handle for window to get tip 
 //
@@ -98,9 +99,9 @@ void sys_FileCheck( PA_PluginParameters params )
 //
 void gui_ToolTipCreate( PA_PluginParameters params )
 {
-	long									style = TT_BALLOON, returnValue = 0;
-	long									uId = 0;
-	long*									puId = &uId;
+	LONG_PTR									style = TT_BALLOON, returnValue = 0;
+	LONG_PTR									uId = 0;
+	LONG_PTR*									puId = &uId;
 	INITCOMMONCONTROLSEX	iccex;
 	HWND									hwndTT, hwndTarget;
 	HINSTANCE							hAppInst;
@@ -179,19 +180,19 @@ void gui_ToolTipCreate( PA_PluginParameters params )
 //
 void gui_ToolTipShowOnObject( PA_PluginParameters params )
 {
-	long									cx = 0, cy = 0, returnValue = 0, location = 0, freeStack = 0;
+	LONG_PTR									cx = 0, cy = 0, returnValue = 0, location = 0, freeStack = 0;
 	HWND									hwndTarget;
 	TOOLINFO							toolInfo;
-	long									uId = 0, howToClose = 0, sendMsgReturn;
-	long*									puId = &uId;
+	LONG_PTR									uId = 0, howToClose = 0, sendMsgReturn;
+	LONG_PTR*									puId = &uId;
 	char									paramMessage[255], title[255], method[80]; // REB 8/1/08 #17556 Increased size of title from 40 to 255.
 	LPTSTR								lpTitle = title;
-	long									paramMessage_len	= strlen(paramMessage);
-	long									title_len					= strlen(title);
-	long									method_len				= strlen(method);
+	LONG_PTR									paramMessage_len	= strlen(paramMessage);
+	LONG_PTR									title_len					= strlen(title);
+	LONG_PTR									method_len				= strlen(method);
 	LPTSTR								lpParamMessage		= paramMessage;
 	RECT									rect;
-	long									left, top, right, bottom, balloonWidth, icon = 0, captionHeight, frameHeight;
+	LONG_PTR									left, top, right, bottom, balloonWidth, icon = 0, captionHeight, frameHeight;
 	PA_Variable						PALeft, PATop, PARight, PABottom;
 
 	if ((sIsPriorTo67)) { // does not work with 6.5 plugin
@@ -350,18 +351,18 @@ void gui_ToolTipShowOnObject( PA_PluginParameters params )
 //
 void gui_ToolTipShowOnCoord( PA_PluginParameters params )
 {
-	long									cx = 0, cy = 0, returnValue = 0;
+	LONG_PTR									cx = 0, cy = 0, returnValue = 0;
 	HWND									hwndTarget;
 	TOOLINFO							toolInfo;
-	long									uId = 0, howToClose = 0, sendMsgReturn;
-	long*									puId = &uId;
+	LONG_PTR									uId = 0, howToClose = 0, sendMsgReturn;
+	LONG_PTR*									puId = &uId;
 	char									paramMessage[255], title[40], method[80];
 	LPTSTR								lpTitle = title;
-	long									paramMessage_len	= strlen(paramMessage);
-	long									title_len					= strlen(title);
-	long									method_len				= strlen(method);
+	LONG_PTR									paramMessage_len	= strlen(paramMessage);
+	LONG_PTR									title_len					= strlen(title);
+	LONG_PTR									method_len				= strlen(method);
 	LPTSTR								lpParamMessage		= paramMessage;
-	long									balloonWidth, icon = 0;
+	LONG_PTR									balloonWidth, icon = 0;
 
 	g_bTriggerMethod = FALSE;
 
@@ -456,11 +457,11 @@ void gui_ToolTipShowOnCoord( PA_PluginParameters params )
 
 void gui_ToolTipHide( PA_PluginParameters params )
 {
-	long									returnValue = 0;
+	LONG_PTR									returnValue = 0;
 	HWND									hwndTarget;
 	TOOLINFO							toolInfo;
-	long									uId = 0, sendMsgReturn;
-	long*									puId = &uId;
+	LONG_PTR									uId = 0, sendMsgReturn;
+	LONG_PTR*									puId = &uId;
 	char									ttMessage[255];
 	LPTSTR								lpttMessage	= ttMessage;
 
@@ -501,7 +502,7 @@ void gui_ToolTipHide( PA_PluginParameters params )
 
 void gui_ToolTipDestroyControl( PA_PluginParameters params )
 {
-	long			returnValue = 0;
+	LONG_PTR			returnValue = 0;
 
 	if (hookHandles.systemMsgHook != NULL) {
 		windowHandles.hwndTT = NULL;
@@ -537,7 +538,7 @@ void gui_ToolTipDestroyControl( PA_PluginParameters params )
 
 void sys_SetClientDate( PA_PluginParameters params )
 {
-	long					returnValue = 0, action = 0;
+	LONG_PTR					returnValue = 0, action = 0;
 	WORD					day, year, month;
 	SYSTEMTIME		st;
 	
@@ -583,7 +584,7 @@ void sys_SetClientDate( PA_PluginParameters params )
 
 void sys_SetClientTime( PA_PluginParameters params )
 {
-	long					serverTime, returnValue = 0, action = 0;
+	LONG_PTR					serverTime, returnValue = 0, action = 0;
 	WORD					hour, minute;
 	SYSTEMTIME		st;
 	//struct _timeb tstruct;
@@ -632,11 +633,11 @@ void sys_SetClientTime( PA_PluginParameters params )
 //
 void gui_LoadBackground( PA_PluginParameters params, BOOL DeInit )
 {
-	long						bmpName_len;
+	LONG_PTR						bmpName_len;
 	char						bmpName[255];  //complete path of bmp file
 	static char			lastBmpName[255];
-	long						returnValue = 0, tileOrScale = 0;
-	static long			lastTileOrScale = 0;
+	LONG_PTR						returnValue = 0, tileOrScale = 0;
+	static LONG_PTR			lastTileOrScale = 0;
 	BOOL						bFuncReturn;
 	HBITMAP					hBitmap;
 	WPARAM					wParam = 0;
@@ -644,6 +645,9 @@ void gui_LoadBackground( PA_PluginParameters params, BOOL DeInit )
 	static HWND			hWnd = 0;
 	RECT						rect;
 	char						windowTitle[] =  "MDI"; 
+	PA_Unistring		Unistring;
+	char				*pathName, *charPos;
+
 	//EngineBlock			Blk4D;
 
 
@@ -708,7 +712,17 @@ void gui_LoadBackground( PA_PluginParameters params, BOOL DeInit )
 		//Blk4D.fHandle = NULL; // 09/09/02
 		//Call4D (EX_GET_HWND, &Blk4D);
 		//hWnd = (HWND)Blk4D.fHandle;
-		hWnd = (HWND)PA_GetHWND(0); //09/09/02
+		// REB 4/20/11 #27322
+		if(PA_Is4DServer()){
+			Unistring = PA_GetApplicationFullPath();
+			pathName = UnistringToCString(&Unistring); 
+			charPos = strrchr(pathName,'\\');
+			*charPos = 0;
+			hWnd = FindWindowEx(NULL, NULL, pathName, NULL);
+		}else{
+			hWnd = PA_GetHWND(NULL); // the current frontmost window
+		}
+		//hWnd = (HWND)PA_GetHWND(0); //09/09/02
 		hWnd = getWindowHandle(windowTitle, hWnd);
 	} else {
 		hWnd = windowHandles.MDIhWnd;
@@ -722,7 +736,9 @@ void gui_LoadBackground( PA_PluginParameters params, BOOL DeInit )
 		//returnValue = lParam;
 		returnValue = 1;
 		wParam = tileOrScale;
-		g_wpOrigMDIProc = (WNDPROC) SetWindowLong(hWnd, GWL_WNDPROC, (LONG) BkgrndProc);
+		// REB 3/18/11 #25290
+		(LONG_PTR)g_wpOrigMDIProc = SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR) BkgrndProc);
+		//g_wpOrigMDIProc = (WNDPROC) SetWindowLong(hWnd, GWL_WNDPROC, (LONG) BkgrndProc);
 		if (g_wpOrigMDIProc != 0) {
 			bFuncReturn = SendNotifyMessage(hWnd, (WM_USER + 0x0030), wParam, lParam);
 			bFuncReturn = GetClientRect(hWnd, &rect);
@@ -752,12 +768,12 @@ void gui_LoadBackground( PA_PluginParameters params, BOOL DeInit )
 
 void sys_GetWindowMetrics( PA_PluginParameters params )
 {
-	long						metricRequest, metricValue;
+	LONG_PTR						metricRequest, metricValue;
 
 	metricRequest = PA_GetLongParameter(params, 1);
-	metricValue = GetSystemMetrics( (int) metricRequest );
+	metricValue = GetSystemMetrics( (INT_PTR) metricRequest );
 
-	PA_ReturnLong( params, (long) metricValue );
+	PA_ReturnLong( params, (LONG_PTR) metricValue );
 
 }
 
@@ -776,7 +792,7 @@ void gui_FlashWindow( PA_PluginParameters params)
 {
 	HWND					hWnd;
 	DWORD					flags;
-	long					returnValue = 0, flashCount, flashRate;
+	LONG_PTR					returnValue = 0, flashCount, flashRate;
 	FLASHWINFO		fwi;
 	PFLASHWINFO		pfwi = &fwi;
 	LPFNDLLFUNC1	lpfnDllFunc1;
@@ -830,7 +846,7 @@ void gui_FlashWindow( PA_PluginParameters params)
 void sys_PlayWav( PA_PluginParameters params )
 {
 	char			fileName[MAX_PATH];
-	long			fileName_len, flag;
+	LONG_PTR			fileName_len, flag;
 	BOOL			bFuncReturn;
 
 	fileName_len = PA_GetTextParameter( params, 1, fileName );
@@ -849,7 +865,7 @@ void sys_PlayWav( PA_PluginParameters params )
 	}
 }
 
-//  FUNCTION: scaleImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, int width, int height)
+//  FUNCTION: scaleImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, INT_PTR width, INT_PTR height)
 //
 //  PURPOSE:  Scale a bitmap to the desired dimensions.
 //
@@ -857,7 +873,7 @@ void sys_PlayWav( PA_PluginParameters params )
 //
 //	DATE: MJG 12/19/03
 //
-HGDIOBJ scaleImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, int width, int height)
+HGDIOBJ scaleImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, INT_PTR width, INT_PTR height)
 {
 	BITMAP origBitmap, scaledBitmap;
 	HBITMAP hScaledBitmap;
@@ -883,7 +899,7 @@ HGDIOBJ scaleImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, int width, int heig
 	return returnObject;
 }
 
-//  FUNCTION: tileImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, int width, int height)
+//  FUNCTION: tileImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, INT_PTR width, INT_PTR height)
 //
 //  PURPOSE:  Tile a bitmap to the desired dimensions.
 //
@@ -891,13 +907,13 @@ HGDIOBJ scaleImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, int width, int heig
 //
 //	DATE: MJG 12/19/03
 //
-HGDIOBJ tileImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, int width, int height)
+HGDIOBJ tileImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, INT_PTR width, INT_PTR height)
 {
 	BITMAP origBitmap;
 	HBITMAP htiledBitmap;
 	HDC	hdcOrigBitmap;
 	HGDIOBJ returnObject;
-	int x,y;
+	INT_PTR x,y;
 		
 	GetObject(hOrigBitmap, sizeof(BITMAP), &origBitmap);
 		
@@ -930,16 +946,16 @@ HGDIOBJ tileImage(HDC hdc, HDC hdcMem, HBITMAP hOrigBitmap, int width, int heigh
 LRESULT APIENTRY BkgrndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	
-	static int cxClient, cyClient;
+	static INT_PTR cxClient, cyClient;
 	static HBITMAP hOrigBitmap;
 	static BITMAP origBitmap;
 	static HDC hdcMem, hdc;
 	static RECT	clientRect; //dcc 12/14
-	static long	tileOrScale, fullClientWidth, fullClientHeight;
+	static LONG_PTR	tileOrScale, fullClientWidth, fullClientHeight;
 	static HGDIOBJ oldObject;
 	PAINTSTRUCT	ps;
 	RECT rect;
-	int x,y;
+	INT_PTR x,y;
 	
 	switch (uMsg)
 	{
@@ -1024,7 +1040,9 @@ LRESULT APIENTRY BkgrndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		fullClientHeight = 0;
 		cxClient = 0;
 		cyClient = 0;
-		SetWindowLong(hwnd, GWL_WNDPROC, (LONG) g_wpOrigMDIProc);
+		// REB 3/18/11 #25290
+		SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)g_wpOrigMDIProc);
+		//SetWindowLong(hwnd, GWL_WNDPROC, (LONG) g_wpOrigMDIProc);
 		break;
 			
 	}
@@ -1060,11 +1078,11 @@ DWORD GetDllVersion(LPCTSTR lpszDllName)
 }
 
 
-LRESULT CALLBACK GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK GetMsgProc(INT_PTR nCode, WPARAM wParam, LPARAM lParam)
 {
 	MSG					*pMsg;
 	TOOLINFO		toolInfo;
-	long				returnValue;
+	LONG_PTR				returnValue;
 	char				ttMessage[80];
 	char*				lpttMessage = ttMessage;
 	pMsg = (MSG *) lParam;
@@ -1114,12 +1132,13 @@ LRESULT CALLBACK GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 VOID createNewProcess( VOID)
 {
-	long								theProcess;
+	LONG_PTR								theProcess;
 	WPARAM							wParam;
 	WPARAM*							pwParam = &wParam;
 	LPARAM							lParam;
 	LPARAM*							plParam = &lParam;
 	BOOL								bDone = FALSE;
+	PA_Unistring					Unistring;
 
 	PA_YieldAbsolute();
 
@@ -1139,7 +1158,10 @@ VOID createNewProcess( VOID)
 		}
 		if (bDone) {
 			
-			PA_ExecuteMethod(g_methodText, strlen(g_methodText));
+			// REB 4/20/11 #27322 Conver the C string to a Unistring
+			Unistring = CStringToUnistring(&g_methodText);
+			PA_ExecuteMethod(&Unistring);
+			//PA_ExecuteMethod(g_methodText, strlen(g_methodText));
 		}
 
 	}
@@ -1159,7 +1181,7 @@ VOID createNewProcess( VOID)
 BOOL checkTimeProvider( ) 
 {
 	char			subKey[100], subKey2[100];
-	long			errorCode;
+	LONG_PTR			errorCode;
 	HKEY			hKey1, hKey2, rootKey;
   char			chKey1[MAX_PATH];
 	DWORD			chKey1_len = MAX_PATH;
@@ -1267,4 +1289,3 @@ BOOL checkTimeProvider( )
 
 	return FALSE;
 }
-

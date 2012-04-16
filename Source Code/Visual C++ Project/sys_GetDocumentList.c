@@ -1,5 +1,4 @@
 
-
 #include "4DPluginAPI.h"
 #include "4DPlugin.h"
 
@@ -22,9 +21,9 @@
 //								  when an error occurs. 
 void sys_GetDocumentList( PA_PluginParameters params )
 {
-	long returnValue = 0;
-	long fileCount = 0;
-	long arraySize = 0;
+	LONG_PTR returnValue = 0;
+	LONG_PTR fileCount = 0;
+	LONG_PTR arraySize = 0;
     char fullPath[MAXBUF];
 	WIN32_FIND_DATA fFindData;
 	DWORD ret = 0;
@@ -35,7 +34,7 @@ void sys_GetDocumentList( PA_PluginParameters params )
 	// parameter variables
 	char *pathName = NULL;
 	char *filePattern = NULL;
-	long maxFilesToReturn = 0;
+	LONG_PTR maxFilesToReturn = 0;
 	PA_Variable paReturnFileList;
 
 	// Get the function parameters.

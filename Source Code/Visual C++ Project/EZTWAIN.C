@@ -43,7 +43,7 @@
 #define STATIC static
 
 #ifdef _WIN32
-  #define INT32 int
+  #define INT32 INT_PTR
   #define DATAGROUP unsigned
   #define DSM_FILENAME "TWAIN_32.DLL"
   #define DSM_ENTRYPOINT "DSM_Entry"
@@ -52,8 +52,8 @@
   #define FMEMSET(p, v, n) memset(p, v, n);
   #define FMEMCPY(p, q, n) memcpy(p, q, n);
 #else
-  #define INT32 long
-  #define DATAGROUP unsigned long
+  #define INT32 LONG_PTR
+  #define DATAGROUP ULONG_PTR
   #define DSM_FILENAME "TWAIN.DLL"
   #define DSM_ENTRYPOINT "DSM_ENTRY"
   #define VALID_HANDLE 32
@@ -135,9 +135,9 @@ const char szInsuffMem[] = "Insufficient Memory";	// error message
 
 //------------ Global variables
 
-STATIC int			iAvailable;			// TWAIN available: 0:unknown, -1:No, 1:Yes
-STATIC int			nState = 1;			// TWAIN state (per the standard)
-STATIC int			nErrDetail;			// detailed error code
+STATIC INT_PTR			iAvailable;			// TWAIN available: 0:unknown, -1:No, 1:Yes
+STATIC INT_PTR			nState = 1;			// TWAIN state (per the standard)
+STATIC INT_PTR			nErrDetail;			// detailed error code
 STATIC unsigned   nErrRC, nErrCC;	// result code and condition code for last error
 STATIC char			szMsg[256];			// scratch buffer for messages
 STATIC DSMENTRYPROC	pDSM_Entry;    // entry point of Data Source Manager (TWAIN.DLL)
@@ -171,15 +171,15 @@ STATIC BOOL             bAutoScan;
 
 //------------ Forward declarations
 
-void EZTAPI TWAIN_WaitForXfer(HWND hwnd, long *lErr);
+void EZTAPI TWAIN_WaitForXfer(HWND hwnd, LONG_PTR *lErr);
 
-static void SetState(int n);
+static void SetState(INT_PTR n);
 static HWND GetValidHwnd(HWND hwnd);
 static HWND CreateProxyWindow(void);
 static TW_UINT32 Intersect(TW_UINT32 wMask, TW_UINT32 nItems, TW_UINT16 far *pItem);
 static unsigned FindIndex16(TW_UINT32 nItems, TW_UINT16 far *plist, TW_UINT16 uVal, unsigned nDefault);
 static unsigned BitCount(unsigned W);
-static int RecordError(ErrorDetail ed);
+static INT_PTR RecordError(ErrorDetail ed);
 static void ClearError(void);
 static double Fix32ToFloat(TW_FIX32 fix);
 static void NativeXferHandler(void);
@@ -222,7 +222,7 @@ BOOL WINAPI DllMain(HANDLE hModule,
 #else
 
 // Win16 DLL initialization and termination routines
-int CALLBACK __export LibMain(HINSTANCE hinst, WORD wDataSeg, WORD cbHeapSize, LPSTR lpszCmdLine)
+INT_PTR CALLBACK __export LibMain(HINSTANCE hinst, WORD wDataSeg, WORD cbHeapSize, LPSTR lpszCmdLine)
 {
 	wDataSeg = wDataSeg; cbHeapSize = cbHeapSize; lpszCmdLine = lpszCmdLine;
 
@@ -232,7 +232,7 @@ int CALLBACK __export LibMain(HINSTANCE hinst, WORD wDataSeg, WORD cbHeapSize, L
 } // LibMain
 
 
-int FAR PASCAL __export _WEP(int x)
+INT_PTR FAR PASCAL __export _WEP(INT_PTR x)
 {
 	x = x;				// suppress 'is never used' warning
 	return 1;
@@ -244,10 +244,10 @@ int FAR PASCAL __export _WEP(int x)
 
 //-- Record application information
 void EZTAPI TWAIN_RegisterApp(
-	int   nMajorNum,     // major and incremental revision of application.
-   int   nMinorNum,     // e.g. version 4.5: nMajorNum = 4, nMinorNum = 5
-	int   nLanguage,     // (human) language (use TWLG_xxx from TWAIN.H)
-	int   nCountry,      // country (use TWCY_xxx from TWAIN.H)
+	INT_PTR   nMajorNum,     // major and incremental revision of application.
+   INT_PTR   nMinorNum,     // e.g. version 4.5: nMajorNum = 4, nMinorNum = 5
+	INT_PTR   nLanguage,     // (human) language (use TWLG_xxx from TWAIN.H)
+	INT_PTR   nCountry,      // country (use TWCY_xxx from TWAIN.H)
 	LPSTR lpszVersion,   // version info string e.g. "1.0b3 Beta release"
 	LPSTR lpszMfg,       // name of mfg/developer e.g. "Crazbat Software"
 	LPSTR lpszFamily,    // product family e.g. "BitStomper"
@@ -270,10 +270,10 @@ void EZTAPI TWAIN_RegisterApp(
 } // TWAIN_RegisterApp
 
 
-int EZTAPI TWAIN_SelectImageSource(HWND hwnd)
+INT_PTR EZTAPI TWAIN_SelectImageSource(HWND hwnd)
 {
-   int fSuccess = FALSE;
-   int nEntryState = nState;
+   INT_PTR fSuccess = FALSE;
+   INT_PTR nEntryState = nState;
    
    if (nState >= TWAIN_SM_OPEN || TWAIN_OpenSourceManager(hwnd)) {
       TW_IDENTITY	NewSourceId;
@@ -300,7 +300,7 @@ int EZTAPI TWAIN_SelectImageSource(HWND hwnd)
 } // TWAIN_SelectImageSource
 
 
-HANDLE EZTAPI TWAIN_AcquireNative(HWND hwnd, unsigned wPixTypes, long *lErr) // REB 7/1/09 Added third parameter to track errors.
+HANDLE EZTAPI TWAIN_AcquireNative(HWND hwnd, unsigned wPixTypes, LONG_PTR *lErr) // REB 7/1/09 Added third parameter to track errors.
 {
 	HANDLE hnative = NULL;
 	ClearError();			// clear error detail
@@ -335,7 +335,7 @@ HANDLE EZTAPI TWAIN_AcquireNative(HWND hwnd, unsigned wPixTypes, long *lErr) // 
 } // TWAIN_AcquireNative
 
 
-HANDLE EZTAPI TWAIN_WaitForNativeXfer(HWND hwnd, long *lErr)
+HANDLE EZTAPI TWAIN_WaitForNativeXfer(HWND hwnd, LONG_PTR *lErr)
 {
     HANDLE hdib = NULL;
     if (nState >= TWAIN_SOURCE_OPEN && TWAIN_XferMech() == XFERMECH_NATIVE) {
@@ -351,7 +351,7 @@ HANDLE EZTAPI TWAIN_WaitForNativeXfer(HWND hwnd, long *lErr)
 } // TWAIN_WaitForNativeXfer
 
 
-void EZTAPI TWAIN_WaitForXfer(HWND hwnd, long *lErr)
+void EZTAPI TWAIN_WaitForXfer(HWND hwnd, LONG_PTR *lErr)
 {
    //BOOL bWasEnabled;
    // Make up a valid window if we weren't given one
@@ -386,13 +386,13 @@ void EZTAPI TWAIN_FreeNative(HANDLE hdib)
 
 
 
-int EZTAPI TWAIN_AcquireToClipboard(HWND hwndApp, unsigned wPixTypes)
+INT_PTR EZTAPI TWAIN_AcquireToClipboard(HWND hwndApp, unsigned wPixTypes)
 // Like AcquireNative, but puts the resulting image, if any, into the system clipboard.
 // Useful for environments like Visual Basic where it is hard to make direct use of a DIB handle.
 // A return value of 1 indicates success, 0 indicates failure.
 {
-	int fOk = FALSE;
-	long lErr = 0;
+	INT_PTR fOk = FALSE;
+	LONG_PTR lErr = 0;
 	HANDLE hDib = TWAIN_AcquireNative(hwndApp, wPixTypes, &lErr);
 	if (hDib) {
 		if (OpenClipboard(hwndApp)) {
@@ -412,11 +412,11 @@ int EZTAPI TWAIN_AcquireToClipboard(HWND hwndApp, unsigned wPixTypes)
 } // TWAIN_AcquireToClipboard
 
 
-int EZTAPI TWAIN_AcquireToFilename(HWND hwndApp, LPCSTR pszFile)
+INT_PTR EZTAPI TWAIN_AcquireToFilename(HWND hwndApp, LPCSTR pszFile)
 // Adapted from a routine by David D. Henseler (ddh) of SOLUTIONS GmbH
 {
-	int result = -1;
-	long lErr = 0;
+	INT_PTR result = -1;
+	LONG_PTR lErr = 0;
 	HANDLE	hDib = TWAIN_AcquireNative(hwndApp, TWAIN_ANYTYPE, &lErr);
 	if (hDib) {
 		result = TWAIN_WriteNativeToFilename(hDib, pszFile);
@@ -429,39 +429,39 @@ int EZTAPI TWAIN_AcquireToFilename(HWND hwndApp, LPCSTR pszFile)
 ///////////////////////////////////////////////////////////////////////
 // DIB utilities
 
-int EZTAPI TWAIN_DibDepth(HANDLE hdib)
+INT_PTR EZTAPI TWAIN_DibDepth(HANDLE hdib)
 {
    LPBITMAPINFOHEADER pbi = (LPBITMAPINFOHEADER)GlobalLock(hdib);
-   int D = pbi->biBitCount;
+   INT_PTR D = pbi->biBitCount;
    GlobalUnlock(hdib);
    return D;
 } // TWAIN_DibDepth
 
-int EZTAPI TWAIN_DibWidth(HANDLE hdib)
+INT_PTR EZTAPI TWAIN_DibWidth(HANDLE hdib)
 {
    LPBITMAPINFOHEADER pbi = (LPBITMAPINFOHEADER)GlobalLock(hdib);
-   int W = (int)pbi->biWidth;
+   INT_PTR W = (INT_PTR)pbi->biWidth;
    GlobalUnlock(hdib);
    return W;
 } // TWAIN_DibWidth
 
 
-int EZTAPI TWAIN_DibHeight(HANDLE hdib)
+INT_PTR EZTAPI TWAIN_DibHeight(HANDLE hdib)
 {
    LPBITMAPINFOHEADER pbi = (LPBITMAPINFOHEADER)GlobalLock(hdib);
-   int H = (int)pbi->biHeight;
+   INT_PTR H = (INT_PTR)pbi->biHeight;
    GlobalUnlock(hdib);
    return H;
 } // TWAIN_DibHeight
 
 
-static int ColorCount(int bpp)
+static INT_PTR ColorCount(INT_PTR bpp)
 {
    return 0xFFF & (1 << bpp);
 }
 
        
-static int BmiColorCount(LPBITMAPINFOHEADER lpbi)
+static INT_PTR BmiColorCount(LPBITMAPINFOHEADER lpbi)
 {
    if (lpbi->biSize == sizeof(BITMAPCOREHEADER)) {
       LPBITMAPCOREHEADER    lpbc = ((LPBITMAPCOREHEADER)lpbi);
@@ -469,24 +469,24 @@ static int BmiColorCount(LPBITMAPINFOHEADER lpbi)
    } else if (lpbi->biClrUsed == 0) {
       return ColorCount(lpbi->biBitCount);
    } else {
-      return (int)lpbi->biClrUsed;
+      return (INT_PTR)lpbi->biClrUsed;
    }
 } // BmiColorCount
 
 
-static int DibNumColors(VOID FAR *pv)
+static INT_PTR DibNumColors(VOID FAR *pv)
 {
    return BmiColorCount((LPBITMAPINFOHEADER)pv);
 } // DibNumColors
 
 
-static size_t RowBytes(int bpp, int w)
+static size_t RowBytes(INT_PTR bpp, INT_PTR w)
 {
 	// bytes per image row - round up to DWORD
 	return (bpp * w + 31) / 32 * 4;
 }
 
-static long BmiRowBytes(const LPBITMAPINFOHEADER lpbi)
+static size_t BmiRowBytes(const LPBITMAPINFOHEADER lpbi) // REB 3/30/11 #25290 Change LONG_PTR to size_t
 {
 	return RowBytes(lpbi->biBitCount, lpbi->biWidth);
 } // BmiRowBytes
@@ -498,7 +498,7 @@ static size_t BmiColorTableBytes(LPBITMAPINFOHEADER lpbi)
 } // BmiColorTableBytes
 
 
-static size_t ColorTableBytes(int bpp)
+static size_t ColorTableBytes(INT_PTR bpp)
 {
 	return ColorCount(bpp) * sizeof(RGBQUAD);
 } // ColorTableBytes
@@ -516,37 +516,37 @@ static LPBYTE FindBits(LPBITMAPINFOHEADER lpbi)
 } // FindBits
 
 
-static LPBYTE FindRow(LPBITMAPINFOHEADER lpbi, int nRow)
+static LPBYTE FindRow(LPBITMAPINFOHEADER lpbi, INT_PTR nRow)
 {
 	LPBYTE lpbits = FindBits(lpbi);
 
 	if (lpbi->biHeight > 0) {
 		// standard upside-down DIB
-		nRow = (int)lpbi->biHeight - 1 - nRow;
+		nRow = (INT_PTR)lpbi->biHeight - 1 - nRow;
 	}
 	return lpbits + nRow * BmiRowBytes(lpbi);
 }
 
 
-int EZTAPI TWAIN_DibNumColors(HANDLE hdib)
+INT_PTR EZTAPI TWAIN_DibNumColors(HANDLE hdib)
 // given a DIB handle, return the number of palette entries: 0,2,16, or 256
 {
 	VOID FAR *pv = GlobalLock(hdib);
-	int nColors = DibNumColors(pv);
+	INT_PTR nColors = DibNumColors(pv);
 	GlobalUnlock(hdib);
     return nColors;
 }
 
 
-long EZTAPI DIB_RowBytes(HANDLE hdib)
+size_t EZTAPI DIB_RowBytes(HANDLE hdib) // REB 3/30/11 #25290 Change LONG_PTR to size_t
 {
-	long s = BmiRowBytes((LPBITMAPINFOHEADER)GlobalLock(hdib));
+	size_t s = BmiRowBytes((LPBITMAPINFOHEADER)GlobalLock(hdib)); // REB 3/30/11 #25290 Change LONG_PTR to size_t
 	GlobalUnlock(hdib);
 	return s;
 }
 
 
-void EZTAPI DIB_ReadRow(HANDLE hdib, int nRow, BYTE* prow)
+void EZTAPI DIB_ReadRow(HANDLE hdib, INT_PTR nRow, BYTE* prow)
 {
    LPBITMAPINFOHEADER pbi = (LPBITMAPINFOHEADER)GlobalLock(hdib);
    FMEMCPY(prow, FindRow(pbi, nRow), (size_t)BmiRowBytes(pbi));
@@ -874,8 +874,8 @@ LPBYTE DibBits(LPBITMAPINFOHEADER lpdib)
 } // end DibBits
 
 
-void EZTAPI TWAIN_DrawDibToDC(HDC hDC, int dx, int dy, int w, int h,
-									 HANDLE hdib, int sx, int sy)
+void EZTAPI TWAIN_DrawDibToDC(HDC hDC, INT_PTR dx, INT_PTR dy, INT_PTR w, INT_PTR h,
+									 HANDLE hdib, INT_PTR sx, INT_PTR sy)
 {
 	LPBITMAPINFOHEADER lpbmi = (LPBITMAPINFOHEADER)GlobalLock(hdib);
 	if (lpbmi) {
@@ -910,7 +910,7 @@ void EZTAPI TWAIN_DrawDibToDC(HDC hDC, int dx, int dy, int w, int h,
 // TWAIN general
 
 
-int EZTAPI TWAIN_IsAvailable(void)
+INT_PTR EZTAPI TWAIN_IsAvailable(void)
 // return 1 if TWAIN services are available, 0 if 'TWAIN-less' system
 {
 	if (pDSM_Entry) return TRUE;		// SM currently loaded
@@ -927,7 +927,7 @@ int EZTAPI TWAIN_IsAvailable(void)
 } // TWAIN_IsAvailable
 
 
-int EZTAPI TWAIN_EasyVersion(void)
+INT_PTR EZTAPI TWAIN_EasyVersion(void)
 // Returns the version number of EZTWAIN.DLL, multiplied by 100.
 // So e.g. version 2.01 will return 201 from this call.
 {
@@ -935,18 +935,18 @@ int EZTAPI TWAIN_EasyVersion(void)
 } // TWAIN_EasyVersion
 
 
-int EZTAPI TWAIN_State(void)
+INT_PTR EZTAPI TWAIN_State(void)
 // Returns the TWAIN Protocol State per the spec.
 {
 	return nState;
 } 
 
-int EZTAPI TWAIN_GetHideUI(void)
+INT_PTR EZTAPI TWAIN_GetHideUI(void)
 {
 	return bHideUI;
 } // TWAIN_GetHideUI
 
-void EZTAPI TWAIN_SetHideUI(int fHide)
+void EZTAPI TWAIN_SetHideUI(INT_PTR fHide)
 {
 	bHideUI = (fHide != 0);
 } // TWAIN_SetHideUI
@@ -955,10 +955,10 @@ void EZTAPI TWAIN_SetHideUI(int fHide)
 ///////////////////////////////////////////////////////////////////////
 // TWAIN State Changers
 
-int EZTAPI TWAIN_LoadSourceManager(void)
+INT_PTR EZTAPI TWAIN_LoadSourceManager(void)
 {
 	char		szSMDir[128];
-	int			cc;
+	INT_PTR			cc;
 	OFSTRUCT	of;
 
 	if (nState >= TWAIN_SM_LOADED) return TRUE;			// DSM already loaded
@@ -993,7 +993,7 @@ int EZTAPI TWAIN_LoadSourceManager(void)
 
 static TW_INT32 hwnd32SM;
 
-int EZTAPI TWAIN_OpenSourceManager(HWND hwnd)
+INT_PTR EZTAPI TWAIN_OpenSourceManager(HWND hwnd)
 {
 	hwnd32SM = (TW_INT32)GetValidHwnd(hwnd);
 
@@ -1008,7 +1008,7 @@ int EZTAPI TWAIN_OpenSourceManager(HWND hwnd)
 } // TWAIN_OpenSourceManager
 
 
-int EZTAPI TWAIN_OpenDefaultSource(void)
+INT_PTR EZTAPI TWAIN_OpenDefaultSource(void)
 {
    static TW_IDENTITY twid;
    if (nState < TWAIN_SOURCE_OPEN) {
@@ -1028,7 +1028,7 @@ int EZTAPI TWAIN_OpenDefaultSource(void)
 } // TWAIN_OpenDefaultSource
 
 
-int EZTAPI TWAIN_EnableSource(HWND hwnd)
+INT_PTR EZTAPI TWAIN_EnableSource(HWND hwnd)
 {
    if (nState < TWAIN_SOURCE_OPEN && !TWAIN_OpenDefaultSource()) {
       return FALSE;
@@ -1041,7 +1041,7 @@ int EZTAPI TWAIN_EnableSource(HWND hwnd)
 } // TWAIN_EnableSource
 
 
-int EZTAPI TWAIN_DisableSource(void)
+INT_PTR EZTAPI TWAIN_DisableSource(void)
 {
 	if (nState == TWAIN_SOURCE_ENABLED &&
 		TWAIN_DS(DG_CONTROL, DAT_USERINTERFACE, MSG_DISABLEDS, &twUI)) {
@@ -1051,7 +1051,7 @@ int EZTAPI TWAIN_DisableSource(void)
 } // TWAIN_DisableSource
 
 
-int EZTAPI TWAIN_CloseSource(void)
+INT_PTR EZTAPI TWAIN_CloseSource(void)
 {
 	rc = TWRC_SUCCESS;
 
@@ -1064,7 +1064,7 @@ int EZTAPI TWAIN_CloseSource(void)
 } // TWAIN_CloseSource
 
 
-int EZTAPI TWAIN_CloseSourceManager(HWND hwnd)
+INT_PTR EZTAPI TWAIN_CloseSourceManager(HWND hwnd)
 {
 	if (nState > TWAIN_SM_OPEN) {
 		TWAIN_CloseSource();
@@ -1080,7 +1080,7 @@ int EZTAPI TWAIN_CloseSourceManager(HWND hwnd)
 } // TWAIN_CloseSourceManager
 
 
-int EZTAPI TWAIN_UnloadSourceManager(void)
+INT_PTR EZTAPI TWAIN_UnloadSourceManager(void)
 {
    TWAIN_CloseSourceManager(NULL);
 	if (nState == TWAIN_SM_LOADED) {
@@ -1176,10 +1176,10 @@ static void DoOneTransfer(void)
 } // DoOneTransfer
 
 
-int EZTAPI TWAIN_MessageHook(LPMSG lpmsg)
+INT_PTR EZTAPI TWAIN_MessageHook(LPMSG lpmsg)
 // returns TRUE if msg processed by TWAIN (source)
 {
-	int   bProcessed = FALSE;
+	INT_PTR   bProcessed = FALSE;
 
 #ifdef EZTPRO_H
    if (lpmsg->message == WM_AUTOSCAN && lpmsg->hwnd == NULL) {
@@ -1221,7 +1221,7 @@ int EZTAPI TWAIN_MessageHook(LPMSG lpmsg)
 } // TWAIN_MessageHook
 
 
-int EZTAPI TWAIN_EndXfer(void)
+INT_PTR EZTAPI TWAIN_EndXfer(void)
 {
    if (nState == TWAIN_TRANSFERRING) {
 		TWAIN_DS(DG_CONTROL, DAT_PENDINGXFERS, MSG_ENDXFER, &pendingXfers);
@@ -1230,7 +1230,7 @@ int EZTAPI TWAIN_EndXfer(void)
 } // TWAIN_EndXfer
 
 
-int EZTAPI TWAIN_AbortAllPendingXfers(void)
+INT_PTR EZTAPI TWAIN_AbortAllPendingXfers(void)
 {
    TWAIN_EndXfer();
    if (nState == TWAIN_TRANSFER_READY) {
@@ -1243,7 +1243,7 @@ int EZTAPI TWAIN_AbortAllPendingXfers(void)
 ///////////////////////////////////////////////////////////////////////
 // DIB/BMP File I/O
 
-int EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile)
+INT_PTR EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile)
 // Writes a DIB handle to a .BMP file
 //
 // hdib		= DIB handle, as returned by TWAIN_AcquireNative
@@ -1258,7 +1258,7 @@ int EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile)
 //	-3	(weird) unable to lock DIB - probably an invalid handle.
 //	-4	writing BMP data failed, possibly output device is full
 {
-	int result;
+	INT_PTR result;
 	char szFile[256];
 	HFILE fh;
 	OFSTRUCT ofs;
@@ -1266,7 +1266,7 @@ int EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile)
 	if (!pszFile || !*pszFile) {
 		// prompt for filename
 		OPENFILENAME ofn;
-		int nExt;
+		INT_PTR nExt;
 		
 		FMEMSET(&ofn, 0, sizeof ofn);
 		szFile[0] = '\0';
@@ -1300,12 +1300,12 @@ int EZTAPI TWAIN_WriteNativeToFilename(HANDLE hdib, LPCSTR pszFile)
 } // TWAIN_WriteNativeToFilename
 
 
-int WriteDibToFile(LPBITMAPINFOHEADER lpDIB, HFILE fh)
+INT_PTR WriteDibToFile(LPBITMAPINFOHEADER lpDIB, HFILE fh)
 {
 	BITMAPFILEHEADER		bfh;
-	int						fOk = FALSE;
-	int						nBPP = lpDIB->biBitCount;
-	int						nColors = (int)lpDIB->biClrUsed;
+	INT_PTR						fOk = FALSE;
+	INT_PTR						nBPP = lpDIB->biBitCount;
+	INT_PTR						nColors = (INT_PTR)lpDIB->biClrUsed;
 
 	// figure out actual size of color table
 	if (nColors == 0 && nBPP <= 8) {
@@ -1344,7 +1344,7 @@ int WriteDibToFile(LPBITMAPINFOHEADER lpDIB, HFILE fh)
 
 } // WriteDibToFile
 
-int EZTAPI TWAIN_WriteNativeToFile(HANDLE hdib, HFILE fh)
+INT_PTR EZTAPI TWAIN_WriteNativeToFile(HANDLE hdib, HFILE fh)
 // Writes a DIB to a file in .BMP format.
 //
 // hdib		= DIB handle, as returned by TWAIN_AcquireNative
@@ -1352,7 +1352,7 @@ int EZTAPI TWAIN_WriteNativeToFile(HANDLE hdib, HFILE fh)
 //
 // Return value as for TWAIN_WriteNativeToFilename
 {
-	int result = -3;
+	INT_PTR result = -3;
 	LPBITMAPINFOHEADER lpbmi = (LPBITMAPINFOHEADER)GlobalLock(hdib);
 	if (lpbmi) {
 		result = -4;
@@ -1383,7 +1383,7 @@ HANDLE EZTAPI TWAIN_LoadNativeFromFilename(LPCSTR pszFile)
 	if (!pszFile || !*pszFile) {
 		// prompt for filename
 		OPENFILENAME ofn;
-		int nExt;
+		INT_PTR nExt;
 	
 		FMEMSET(&ofn, 0, sizeof ofn);
 		szFile[0] = '\0';
@@ -1449,17 +1449,17 @@ HANDLE EZTAPI TWAIN_LoadNativeFromFile(HFILE fh)
 ///////////////////////////////////////////////////////////////////////
 // TWAIN State 4 Negotiation Functions
 
-int EZTAPI TWAIN_NegotiateXferCount(int nXfers)
+INT_PTR EZTAPI TWAIN_NegotiateXferCount(INT_PTR nXfers)
 {
 	return TWAIN_SetCapOneValue(CAP_XFERCOUNT, TWTY_INT16, nXfers);
 } // TWAIN_NegotiateXferCount
 
 
-int EZTAPI TWAIN_NegotiatePixelTypes(unsigned wPixTypes)
+INT_PTR EZTAPI TWAIN_NegotiatePixelTypes(unsigned wPixTypes)
 {
 	TW_CAPABILITY 		cap;
 	void far *			pv;
-	int					fSuccess = FALSE;
+	INT_PTR					fSuccess = FALSE;
 
 	if (nState != TWAIN_SOURCE_OPEN) {
 		return RecordError(ED_NOT_STATE_4);
@@ -1558,15 +1558,15 @@ int EZTAPI TWAIN_NegotiatePixelTypes(unsigned wPixTypes)
 } // TWAIN_NegotiatePixelTypes
 
 
-int EZTAPI TWAIN_GetCurrentUnits(void)
+INT_PTR EZTAPI TWAIN_GetCurrentUnits(void)
 {
-	int nUnits = TWUN_INCHES;
+	INT_PTR nUnits = TWUN_INCHES;
 	TWAIN_GetCapCurrent(ICAP_UNITS, TWTY_UINT16, &nUnits);
 	return nUnits;
 } // TWAIN_GetCurrentUnits
 
 
-int EZTAPI TWAIN_SetCurrentUnits(int nUnits)
+INT_PTR EZTAPI TWAIN_SetCurrentUnits(INT_PTR nUnits)
 // Negotiate the current pixel type for acquisition.
 // Negotiation is only allowed in State 4 (TWAIN_SOURCE_OPEN)
 // The source may select this pixel type, but don't assume it will.
@@ -1575,34 +1575,34 @@ int EZTAPI TWAIN_SetCurrentUnits(int nUnits)
 } // TWAIN_SetCurrentUnits
 
 
-int EZTAPI TWAIN_GetBitDepth(void)
+INT_PTR EZTAPI TWAIN_GetBitDepth(void)
 // Ask the source for the current bitdepth.
 // This value depends on the current PixelType.
 // Bit depth is per color channel e.g. 24-bit RGB has bit depth 8.
 // If anything goes wrong, this function returns 0.
 {
-	int nBits = 0;
+	INT_PTR nBits = 0;
 	TWAIN_GetCapCurrent(ICAP_BITDEPTH, TWTY_UINT16, &nBits);
 	return nBits;
 } // TWAIN_GetBitDepth
 
-int EZTAPI TWAIN_SetBitDepth(int nBits)
+INT_PTR EZTAPI TWAIN_SetBitDepth(INT_PTR nBits)
 // (Try to) set the current bitdepth (for the current pixel type).
 {
 	return TWAIN_SetCapOneValue(ICAP_BITDEPTH, TWTY_UINT16, (TW_UINT16)nBits);
 } // TWAIN_SetBitDepth
 
 
-int EZTAPI TWAIN_GetPixelType(void)
+INT_PTR EZTAPI TWAIN_GetPixelType(void)
 // Ask the source for the current pixel type.
 // If anything goes wrong (it shouldn't!), this function returns 0 (TWPT_BW).
 {
-	int nPixType = 0;
+	INT_PTR nPixType = 0;
 	TWAIN_GetCapCurrent(ICAP_PIXELTYPE, TWTY_UINT16, &nPixType);
 	return nPixType;
 } // TWAIN_GetPixelType
 
-int EZTAPI TWAIN_SetCurrentPixelType(int nPixType)
+INT_PTR EZTAPI TWAIN_SetCurrentPixelType(INT_PTR nPixType)
 // Negotiate the current pixel type for acquisition.
 // Negotiation is only allowed in State 4 (TWAIN_SOURCE_OPEN)
 // The source may select this pixel type, but don't assume it will.
@@ -1631,7 +1631,7 @@ double EZTAPI TWAIN_GetYResolution(void)
 } // TWAIN_GetYResolution
 
 
-int EZTAPI TWAIN_SetCurrentResolution(double dRes)
+INT_PTR EZTAPI TWAIN_SetCurrentResolution(double dRes)
 // Negotiate the current resolution for acquisition.
 // Negotiation is only allowed in State 4 (TWAIN_SOURCE_OPEN)
 // The source may select this resolution, but don't assume it will.
@@ -1644,7 +1644,7 @@ int EZTAPI TWAIN_SetCurrentResolution(double dRes)
 /////////////////////////////////////////////////////////////////////////////
 // ICAP_CONTRAST
 
-int EZTAPI TWAIN_SetContrast(double dCon)
+INT_PTR EZTAPI TWAIN_SetContrast(double dCon)
 // (Try to) set the current contrast for acquisition.
 // The TWAIN standard says that the range for this cap is -1000 ... +1000
 {
@@ -1655,7 +1655,7 @@ int EZTAPI TWAIN_SetContrast(double dCon)
 /////////////////////////////////////////////////////////////////////////////
 // ICAP_BRIGHTNESS
 
-int EZTAPI TWAIN_SetBrightness(double dBri)
+INT_PTR EZTAPI TWAIN_SetBrightness(double dBri)
 // (Try to) set the current brightness for acquisition.
 // The TWAIN standard says that the range for this cap is -1000 ... +1000
 {
@@ -1666,14 +1666,14 @@ int EZTAPI TWAIN_SetBrightness(double dBri)
 /////////////////////////////////////////////////////////////////////////////
 // ICAP_XFERMECH
 
-int EZTAPI TWAIN_XferMech(void)
+INT_PTR EZTAPI TWAIN_XferMech(void)
 {
 	TW_UINT16 mech = XFERMECH_NATIVE;
 	TWAIN_GetCapCurrent(ICAP_XFERMECH, TWTY_UINT16, &mech);
 	return mech;
 } // TWAIN_XferMech
 
-int EZTAPI TWAIN_SetXferMech(int mech)
+INT_PTR EZTAPI TWAIN_SetXferMech(INT_PTR mech)
 {
 	return TWAIN_SetCapOneValue(ICAP_XFERMECH, TWTY_UINT16, (TW_UINT16)mech);
 } // TWAIN_SetXferMech
@@ -1685,33 +1685,33 @@ int EZTAPI TWAIN_SetXferMech(int mech)
 static void DoubleToFix32(double r, TW_FIX32* pfix)
 {
    // Note 1: This round-away-from-0 is new in TWAIN 1.7
-   // Note 2: ANSI C converts float to int by truncating toward 0.
+   // Note 2: ANSI C converts float to INT_PTR by truncating toward 0.
 	TW_INT32 val = (TW_INT32)(r * 65536.0 + (r < 0 ? -0.5 : +0.5));
 	pfix->Whole = (TW_INT16)(val >> 16);			// most significant 16 bits
 	pfix->Frac = (TW_UINT16)(val & 0xffff);		// least
 } // DoubleToFix32
 
 
-long EZTAPI TWAIN_ToFix32(double r)
+LONG_PTR EZTAPI TWAIN_ToFix32(double r)
 {
 	TW_FIX32 fix;
-	assert(sizeof (TW_FIX32) == sizeof (long));
+	assert(sizeof (TW_FIX32) == sizeof (LONG_PTR));
    DoubleToFix32(r, &fix);
-	return *(long*)&fix;
+	return *(LONG_PTR*)&fix;
 } // TWAIN_ToFix32
 
 
-double EZTAPI TWAIN_Fix32ToFloat(long nfix)
+double EZTAPI TWAIN_Fix32ToFloat(LONG_PTR nfix)
 {
    TW_FIX32 fix;
    TW_INT32 val;
-   *(long*)&fix = nfix;
+   *(LONG_PTR*)&fix = nfix;
 	val = ((TW_INT32)fix.Whole << 16) | ((TW_UINT32)fix.Frac & 0xffff);
 	return val / 65536.0;
 } // TWAIN_Fix32ToFloat
 
 
-int EZTAPI TWAIN_SetCapOneValue(unsigned Cap, unsigned ItemType, long ItemVal)
+INT_PTR EZTAPI TWAIN_SetCapOneValue(unsigned Cap, unsigned ItemType, LONG_PTR ItemVal)
 {
 	TW_CAPABILITY	cap;
 	pTW_ONEVALUE	pv;
@@ -1756,7 +1756,7 @@ const size_t nTypeSize[13] =
 	};
 
 // helper function:
-int TypeMatch(unsigned nTypeA, unsigned nTypeB)
+INT_PTR TypeMatch(unsigned nTypeA, unsigned nTypeB)
 {
 	// Integral types match if they are the same size.
 	// All other types match only if they are equal
@@ -1768,7 +1768,7 @@ int TypeMatch(unsigned nTypeA, unsigned nTypeB)
 
 
 
-int EZTAPI TWAIN_GetCapCurrent(unsigned Cap, unsigned ItemType, void FAR *pVal)
+INT_PTR EZTAPI TWAIN_GetCapCurrent(unsigned Cap, unsigned ItemType, void FAR *pVal)
 {
 	TW_CAPABILITY 	cap;
 	void far *		pv = NULL;
@@ -1816,10 +1816,10 @@ int EZTAPI TWAIN_GetCapCurrent(unsigned Cap, unsigned ItemType, void FAR *pVal)
 //-------------------------- The primitive functions
 
 
-int EZTAPI TWAIN_DS(unsigned long dg, unsigned dat, unsigned msg, void FAR *pd)
+INT_PTR EZTAPI TWAIN_DS(ULONG_PTR dg, unsigned dat, unsigned msg, void FAR *pd)
 // Call the current source with a triplet
 {
-   int bOk = FALSE;
+   INT_PTR bOk = FALSE;
    assert(nState >= TWAIN_SOURCE_OPEN);
    rc = TWRC_FAILURE;
    if (dg == DG_IMAGE) {
@@ -1938,10 +1938,10 @@ int EZTAPI TWAIN_DS(unsigned long dg, unsigned dat, unsigned msg, void FAR *pd)
 
 
 
-int EZTAPI TWAIN_Mgr(unsigned long dg, unsigned dat, unsigned msg, void FAR *pd)
+INT_PTR EZTAPI TWAIN_Mgr(ULONG_PTR dg, unsigned dat, unsigned msg, void FAR *pd)
 // Call the Source Manager with a triplet
 {
-   int bOk = FALSE;
+   INT_PTR bOk = FALSE;
 	rc = TWRC_FAILURE;
 	if (pDSM_Entry) {
 		rc = (*pDSM_Entry)(&AppId, NULL,
@@ -2033,7 +2033,7 @@ void EZTAPI TWAIN_ErrorBox(LPCSTR pzMsg)
 
 //------------ Private functions
 
-void SetState(int n)
+void SetState(INT_PTR n)
 {
    char szMsg[256];
    wsprintf(szMsg, "EZTW:State %d\n", n);
@@ -2085,7 +2085,7 @@ HWND CreateProxyWindow(void)
 } // CreateProxyWindow
 
 
-int RecordError(ErrorDetail ed)
+INT_PTR RecordError(ErrorDetail ed)
 {
 	if (nErrDetail == ED_NONE) {
 		nErrDetail = ed;

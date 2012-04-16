@@ -6,7 +6,7 @@
 #include "EntryPoints.h"
 
 
-HKEY getRootKey(int key)
+HKEY getRootKey(INT_PTR key)
 {
 
 	HKEY hRootKey;
@@ -47,7 +47,7 @@ HKEY getRootKey(int key)
 	return hRootKey;
 }
 
-int get4dRegType(int key)
+INT_PTR get4dRegType(INT_PTR key)
 {
 	
 	switch(key) {
@@ -77,10 +77,10 @@ int get4dRegType(int key)
 }
 
 
-long regGetNumElements(char *pValue)
+LONG_PTR regGetNumElements(char *pValue)
 {
 
-	int arrayElements = 0;
+	INT_PTR arrayElements = 0;
 
 	do
 	{
@@ -96,8 +96,8 @@ long regGetNumElements(char *pValue)
 void regExpandStr(char **pValue)
 {
 	char *tmpValue = NULL;
-	int expandDataSize = 0;
-	int retErr = 0;
+	INT_PTR expandDataSize = 0;
+	INT_PTR retErr = 0;
 
 	expandDataSize = ExpandEnvironmentStrings(*pValue, NULL, 0);
 

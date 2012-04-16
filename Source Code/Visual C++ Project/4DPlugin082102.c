@@ -1,5 +1,4 @@
 
-
 #include "4DPluginAPI.h"
 #include "4DPlugin.h"
 
@@ -37,21 +36,21 @@ extern struct		PROCESSHANDLES
 
 	struct		TOOLBARRESTRICT
 {
-	long		toolBarOnDeck;
-	long		top;
-	long		left;
-	long		right;
-	long		bottom;
-	int			topProcessNbr;
-	int			leftProcessNbr;
-	int			rightProcessNbr;
-	int			bottomProcessNbr;
-	long		trackingRestriction;
-	long		appBeingMaxed;
-	long		appWindowState;
+	LONG_PTR		toolBarOnDeck;
+	LONG_PTR		top;
+	LONG_PTR		left;
+	LONG_PTR		right;
+	LONG_PTR		bottom;
+	INT_PTR			topProcessNbr;
+	INT_PTR			leftProcessNbr;
+	INT_PTR			rightProcessNbr;
+	INT_PTR			bottomProcessNbr;
+	LONG_PTR		trackingRestriction;
+	LONG_PTR		appBeingMaxed;
+	LONG_PTR		appWindowState;
 	RECT		origWindowRect;
-	long		clientOffsetx;
-	long		clientOffsety;
+	LONG_PTR		clientOffsetx;
+	LONG_PTR		clientOffsety;
 	char		minimizedWindows[SMLBUF][SMLBUF]; // REB 8/11/08 #16207 
 	RECT		previousWindowRect; // REB 3/26/10
 } toolBarRestrictions;
@@ -70,13 +69,13 @@ extern struct		PROCESSHANDLES
 //	DATE:			dcc 08/21/02
 //
 //	MODIFICATIONS: 10/28/02 replace forward slashes in a provided UNC with backslashes (3.5.2)
-//				   11/21/01 made parameters longer for long urls etc (3.5.3)
+//				   11/21/01 made parameters longer for LONG_PTR urls etc (3.5.3)
 //                 08/08/04 Removed the limit on the length of the parameters.
 void sys_ShellExecute( PA_PluginParameters params )
 {
-	long returnValue = 0;
+	LONG_PTR returnValue = 0;
 	char returnText[255]; // MWD & Mark De Wever #12225
-	int	 howToShow;
+	INT_PTR	 howToShow;
 	char *pChar;
 
 	char *operation = NULL;
@@ -118,7 +117,7 @@ void sys_ShellExecute( PA_PluginParameters params )
 			}
 		} while (*pChar++ != '\0');
 		
-		returnValue = (long) ShellExecute(NULL, operation, file, parameters, directory, howToShow);
+		returnValue = (LONG_PTR) ShellExecute(NULL, operation, file, parameters, directory, howToShow);
 		
 		strcpy(returnText, "");
 		if (returnValue <= 32) { // error occurred
@@ -217,7 +216,7 @@ void sys_IsAppLoaded( PA_PluginParameters params )
 	HINSTANCE						hPSapiDLL;
 	BOOL								bFuncReturn, bUseToolHelp = FALSE;
 	char								appName[100]; 
-	long								appName_len;
+	LONG_PTR								appName_len;
 
 	appName_len						 = PA_GetTextParameter( params, 1, appName );
 	appName[appName_len]	 = '\0';
@@ -234,7 +233,7 @@ void sys_IsAppLoaded( PA_PluginParameters params )
 // 
 //  FUNCTION: getPSapiPointers(LPFNENUMPROC *ppEnumProc,	LPFNENUMPROCMODS *ppEnumProcMods,
 //									LPFNGETMODFNAME *ppGetModFName, char *pAppName,
-//									long osver, BOOL bUseToolHelp)
+//									LONG_PTR osver, BOOL bUseToolHelp)
 //
 //  PURPOSE:	Tests if psAPI library is available
 //
@@ -278,7 +277,7 @@ HINSTANCE getPSapiPointers(LPFNENUMPROC *ppEnumProc,	LPFNENUMPROCMODS *ppEnumPro
 BOOL reviewProcesses(HANDLE hPSapiDLL, LPFNENUMPROC lpfnEnumProc,	LPFNENUMPROCMODS lpfnEnumProcMods,
 										 LPFNGETMODFNAME lpfnGetModFName, char *pAppName, BOOL bUseToolHelp)
 {
-	long					returnValue = 0;
+	LONG_PTR					returnValue = 0;
 	DWORD					aProcesses[1024], cbNeeded, cProcesses, cMods;
 	UINT					i, j;
 	char					szProcessName[MAX_PATH] = "Unknown";
@@ -396,7 +395,7 @@ void gui_SelectColor( PA_PluginParameters params)
 	CHOOSECOLOR			cColor;
 	static COLORREF		acrCustColor[16];
 	static DWORD		rgbCurrent;
-	long				rParam, gParam, bParam, returnValue = 0, i, hasCustom;
+	LONG_PTR				rParam, gParam, bParam, returnValue = 0, i, hasCustom;
 	PA_Variable			custColorArray;
 	
 	rParam = PA_GetLongParameter( params, 1); 
@@ -478,10 +477,10 @@ void gui_SelectColor( PA_PluginParameters params)
 //
 void gui_RespectToolBar( PA_PluginParameters params )
 {
-	long					position_len = 0, tbRestriction = 0;
-	long					trackingRestriction = 0, processNbr;
+	LONG_PTR					position_len = 0, tbRestriction = 0;
+	LONG_PTR					trackingRestriction = 0, processNbr;
 	char					position[2];
-	int						theChar;
+	INT_PTR						theChar;
 
 
 	tbRestriction	 = PA_GetLongParameter( params, 1); 
@@ -504,7 +503,7 @@ void gui_RespectToolBar( PA_PluginParameters params )
 
 	if ((tbRestriction != 0) &&  (strpbrk(position, "ltrb") != NULL)) {
 		toolBarRestrictions.toolBarOnDeck = 1;
-		theChar = (int) position[0];
+		theChar = (INT_PTR) position[0];
 	}
 
 	processNbr = PA_GetCurrentProcessNumber();
@@ -558,7 +557,7 @@ void gui_RespectToolBar( PA_PluginParameters params )
 void sys_IsConnectedToInternet( PA_PluginParameters params )
 {
 	short returnValue;
-	long connectionType;
+	LONG_PTR connectionType;
 
 	LPFNDLLFUNC4	lpfnDllFunc4;
 	HINSTANCE		hDLL;
@@ -595,9 +594,9 @@ void sys_IsConnectedToInternet( PA_PluginParameters params )
 //
 void gui_GetSysColor( PA_PluginParameters params )
 {
-	long returnValue;
-	long displayElement;
-	long retRValue, retGValue, retBValue;
+	LONG_PTR returnValue;
+	LONG_PTR displayElement;
+	LONG_PTR retRValue, retGValue, retBValue;
 	DWORD dwResult;
 
 	returnValue = 0;
@@ -633,13 +632,13 @@ void gui_GetSysColor( PA_PluginParameters params )
 //
 void gui_SetSysColor( PA_PluginParameters params )
 {
-	long returnValue;
-	int displayElement[1];
+	LONG_PTR returnValue;
+	INT_PTR displayElement[1];
 	COLORREF rgbValue[1];
 	BYTE rValue, gValue, bValue;
 
 	returnValue = 0;
-	displayElement[0] = (int) PA_GetLongParameter( params, 1); 
+	displayElement[0] = (INT_PTR) PA_GetLongParameter( params, 1); 
 	rValue = (BYTE) PA_GetLongParameter( params, 2);
 	gValue = (BYTE) PA_GetLongParameter( params, 3);
     bValue = (BYTE) PA_GetLongParameter( params, 4);
@@ -664,8 +663,8 @@ void gui_SetSysColor( PA_PluginParameters params )
 //
 void sys_GetEnv( PA_PluginParameters params )
 {
-	long returnValue;
-	long envLength;
+	LONG_PTR returnValue;
+	LONG_PTR envLength;
 	char envName[MAXBUF], *envValue;
 
 	envValue = NULL;
@@ -699,7 +698,7 @@ void sys_GetEnv( PA_PluginParameters params )
 //
 void sys_SetEnv( PA_PluginParameters params )
 {
-	long returnValue;
+	LONG_PTR returnValue;
 	char envName[MAXBUF], envValue[MAXBUF];
 
 	returnValue = 0;
@@ -727,8 +726,8 @@ void sys_SetEnv( PA_PluginParameters params )
 //
 void sys_GetRegKey( PA_PluginParameters params )
 {
-	long returnValue, regKey, retErr, dataSize, arraySize, expandDataSize;
-	long i, len;
+	LONG_PTR returnValue, regKey, retErr, dataSize, arraySize, expandDataSize;
+	LONG_PTR i, len;
 	char regSub[MAXBUF];
 	char regName[MAXBUF];
 	char *returnDataBuffer, *ptrData;
@@ -857,7 +856,7 @@ void sys_GetRegKey( PA_PluginParameters params )
 //
 void sys_GetRegType( PA_PluginParameters params )
 {
-	long returnValue, regKey, retErr;
+	LONG_PTR returnValue, regKey, retErr;
 	char regSub[MAXBUF];
 	char regName[MAXBUF];
 	char *returnDataBuffer;
@@ -908,9 +907,9 @@ void sys_GetRegType( PA_PluginParameters params )
 //
 void sys_GetRegEnum( PA_PluginParameters params )
 {
-	long returnValue, regKey, retErr;
+	LONG_PTR returnValue, regKey, retErr;
 	char regSub[MAXBUF];
-	long regBufSize = MAX_REG_SIZE;
+	LONG_PTR regBufSize = MAX_REG_SIZE;
 	CHAR regBuf[MAX_REG_SIZE]; 
 
 	FILETIME ftLastWriteTime;
@@ -1010,7 +1009,7 @@ void sys_GetRegEnum( PA_PluginParameters params )
 
 void sys_SetPluginLanguage( PA_PluginParameters params )
 {
-	long language;
+	LONG_PTR language;
 		// Get the function parameters.
 	language = PA_GetLongParameter( params, 1 );
 
@@ -1051,10 +1050,10 @@ void sys_PrintDirect2Driver( PA_PluginParameters params )
 	char printerName[MAXBUF] = "";    // String to hold the printerName param ($1)
 	char data[MAXLABELBUF] = "";      // String to hold the data param ($2) REB 6/5/08 #17022 Changed MAXBUF to MAXLABELBUF which is twice as big.
 	char *origDefault;                // String to hold the original default printer
-	int printerName_len;              // Int to hold maximum length of printer name
-	int ret;                          // Int to hold return value of functions                 
-	int iErrCode = 0;                 // Int to hold the error code.
-	unsigned long ulBytesNeeded;      // Holds size information
+	INT_PTR printerName_len;              // Int to hold maximum length of printer name
+	INT_PTR ret;                          // Int to hold return value of functions                 
+	INT_PTR iErrCode = 0;                 // Int to hold the error code.
+	ULONG_PTR ulBytesNeeded;      // Holds size information
 
 	// Set needed bytes to default value
 	ulBytesNeeded = MAXLABELBUF; // REB 6/5/08 #17022 Changed MAXBUF to MAXLABELBUF
@@ -1156,9 +1155,9 @@ void sys_PrintDirect2Driver( PA_PluginParameters params )
 		// Set the Default Printer back to the original.
   		ret = SetDefaultPrinter(origDefault);
 
-		PA_ReturnLong(params, (long)iErrCode); 
+		PA_ReturnLong(params, (LONG_PTR)iErrCode); 
 	} else {
-	  PA_ReturnLong(params, (long)GetLastError());
+	  PA_ReturnLong(params, (LONG_PTR)GetLastError());
 	}	// end if
 }//end function
 
@@ -1178,7 +1177,7 @@ void sys_KillProcessByName( PA_PluginParameters params )
 	HANDLE hProcess;                  // Handle to the process itself
 	PROCESSENTRY32 pe32;              // ProcessEntry to get info about processes
   char processName[MAXBUF] = "";    // String to hold the printerName param ($1)
-	long lMode = 1;                   // Long to hold the working mode ($2)
+	LONG_PTR lMode = 1;                   // Long to hold the working mode ($2)
 	                                  // 1 = just first process matching name
 	                                  // 2 = all processes matching name
 	BOOL bCleanFirst = FALSE;         // Boolean to see if we should try to cleanly close the app
@@ -1198,7 +1197,7 @@ void sys_KillProcessByName( PA_PluginParameters params )
   hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   if(hProcessSnap == INVALID_HANDLE_VALUE)
   {
-    PA_ReturnLong(params, (long)GetLastError());
+    PA_ReturnLong(params, (LONG_PTR)GetLastError());
 		return;
   }
 
@@ -1210,7 +1209,7 @@ void sys_KillProcessByName( PA_PluginParameters params )
   if(!Process32First( hProcessSnap, &pe32))
   {
     CloseHandle( hProcessSnap );     // Must clean up the snapshot object!
-    PA_ReturnLong(params, (long)GetLastError());
+    PA_ReturnLong(params, (LONG_PTR)GetLastError());
 		return;
   }
 
@@ -1233,7 +1232,7 @@ void sys_KillProcessByName( PA_PluginParameters params )
 			// and return the error
       if(hProcess == NULL) {
 				CloseHandle(hProcessSnap);
-        PA_ReturnLong(params, (long)GetLastError());
+        PA_ReturnLong(params, (LONG_PTR)GetLastError());
 			  return;
 			}
 
@@ -1264,7 +1263,7 @@ void sys_KillProcessByName( PA_PluginParameters params )
 				  // Clean up and return the error
           CloseHandle(hProcess);
 				  CloseHandle(hProcessSnap);
-				  PA_ReturnLong(params, (long)GetLastError());
+				  PA_ReturnLong(params, (LONG_PTR)GetLastError());
 				  return;
 				}
 			}
@@ -1277,7 +1276,7 @@ void sys_KillProcessByName( PA_PluginParameters params )
 
 	// Close the handle and return success
   CloseHandle(hProcessSnap);
-  PA_ReturnLong(params, -1 * (long)bCleanFirst);
+  PA_ReturnLong(params, -1 * (LONG_PTR)bCleanFirst);
 }
 	
 // ------------------------------------------------
@@ -1293,7 +1292,7 @@ void sys_KillProcessByName( PA_PluginParameters params )
 void sys_KillProcessByID( PA_PluginParameters params )
 {
 	HANDLE hProcess;                  // Handle to the process itself
-	int lPID;                         // Integer to hold the processID ($1)
+	INT_PTR lPID;                         // Integer to hold the processID ($1)
 	BOOL bCleanFirst = FALSE;         // Boolean to see if we should try to cleanly close the app
 	                                  // before killing it mercilessly ($2)
 	
@@ -1306,7 +1305,7 @@ void sys_KillProcessByID( PA_PluginParameters params )
   
   // Check to see if we got it, and return an error if we didn't
 	if(hProcess == NULL) {
-    PA_ReturnLong(params, (long)GetLastError());
+    PA_ReturnLong(params, (LONG_PTR)GetLastError());
 		return;
 	}
 
@@ -1333,7 +1332,7 @@ void sys_KillProcessByID( PA_PluginParameters params )
 	  	PA_ReturnLong(params, 0);
 		} else {
 	  	// Fail! Return the error
-      PA_ReturnLong(params, (long)GetLastError());
+      PA_ReturnLong(params, (LONG_PTR)GetLastError());
 		}
 	} // end if !bCleanFirst
 
@@ -1389,7 +1388,7 @@ void sys_EnumProcesses( PA_PluginParameters params )
 	PA_Variable paNameArray;          // Array to store process names ($1)
 	PA_Variable paIDArray;            // Array to store process IDs ($2)
 
-	int iSize = 0;                    // Int to control size of array
+	INT_PTR iSize = 0;                    // Int to control size of array
 
   // Get variables representing passed in arrays
 	paNameArray = PA_GetVariableParameter(params, 1);
@@ -1404,7 +1403,7 @@ void sys_EnumProcesses( PA_PluginParameters params )
   hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   if(hProcessSnap == INVALID_HANDLE_VALUE)
   {
-    PA_ReturnLong(params, (long)GetLastError());
+    PA_ReturnLong(params, (LONG_PTR)GetLastError());
 		return;
   }
 
@@ -1416,7 +1415,7 @@ void sys_EnumProcesses( PA_PluginParameters params )
   if(!Process32First( hProcessSnap, &pe32))
   {
     CloseHandle( hProcessSnap );     // Must clean up the snapshot object!
-    PA_ReturnLong(params, (long)GetLastError());
+    PA_ReturnLong(params, (LONG_PTR)GetLastError());
 		return;
   }
 
@@ -1488,7 +1487,7 @@ void sys_LogonUser(PA_PluginParameters params)
     }
   }
 
-  PA_ReturnLong(params, (long)bStatus);
+  PA_ReturnLong(params, (LONG_PTR)bStatus);
 }
 
 /* end of NTAuth.c */

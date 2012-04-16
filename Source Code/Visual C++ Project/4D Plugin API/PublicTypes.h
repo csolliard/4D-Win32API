@@ -5,38 +5,54 @@
 // File : PublicTypes.h
 // Description : all the structures needed to use 4D Plugin API
 //
-// rev : 2004.7
+// rev : v12.0
 //
 // ---------------------------------------------------------------
 
 #ifndef __PUBLICTYPES__
 #define __PUBLICTYPES__
 
-
-// all the 4th Dimension structures use 2 bytes alignment
-#if VERSIONWIN
-	#pragma pack(push,2)
-#elif VERSIONMAC
-	#pragma options align = mac68k
-#endif
-
+// all the 4D Application structures use 2 bytes alignment
+#pragma pack(push,2)
 
 typedef char** PA_Handle;
-typedef long PA_WindowRef;
-typedef long PA_PortRef;
-typedef long PA_PluginRef;
+typedef void* PA_WindowRef;
+typedef void* PA_PortRef;
+typedef void* PA_PluginRef;
 typedef PA_Handle PA_QueryRef;
 typedef PA_Handle PA_OrderByRef;
-typedef PA_Handle PA_TableRef;
-typedef long PA_Dial4D;
+typedef void* PA_Dial4D;
+typedef unsigned short PA_Unichar;
+typedef void* PA_Picture;
+typedef void* PA_DragContextRef;
+typedef void* PA_PasteboardRef;
+
+typedef struct
+{
+	long			fLength;
+	PA_Unichar*		fString;
+	long			fReserved1;
+	long			fReserved2;
+} PA_Unistring;
 
 // need a crossplatform type for 64 bits integers
 #if VERSIONWIN
-typedef __int64 PA_long64;
+	typedef __int64 PA_long64;
+	typedef unsigned __int64 PA_ulong64;
 #elif VERSIONMAC
-typedef long long PA_long64;
+	typedef long long PA_long64;
+	typedef unsigned long long PA_ulong64;
+#endif
+#if PA_64BITS_ARCHITECTURE
+	typedef PA_long64 sLONG_PTR;
+	typedef PA_ulong64 uLONG_PTR;
+#else
+	typedef long sLONG_PTR;
+	typedef unsigned long uLONG_PTR;
 #endif
 
+// function pointers to pass to PA_RunInMainProcess
+typedef void (*PA_RunInMainProcessProcPtr) (void*);
 
 // opaque structure to store Plugin call parameters
 typedef struct PluginBlock
@@ -127,6 +143,7 @@ typedef enum
 	eAE_AllowDrop						= 80,
 	eAE_Drag							= 81,
 	eAE_Drop							= 82,
+	eAE_BeginDrag						= 85,	// added in v11
 	eAE_WebPublish						= 128,
 	eAE_WebPublishPicture				= 129,
 	eAE_WebDisposeData					= 130,
@@ -140,6 +157,109 @@ typedef enum
 } PA_AreaEvent;
 
 
+// --------------------------------------------------------------------------------
+// Keycode returned by PA_GetKey
+// --------------------------------------------------------------------------------
+
+typedef enum PA_KeyCode
+{
+	KEY_DUMMY = -1,
+	// special value for system characters and unhandled keys
+	KEY_OTHER = 0,
+	// mixed keys
+	KEY_RETURN = 0x0D,
+	KEY_TAB = 0x09,
+	KEY_SPACE = ' ',
+	// numeric keys
+	KEY_ZERO = '0',
+	KEY_1,
+	KEY_2,
+	KEY_3,
+	KEY_4,
+	KEY_5,
+	KEY_6,
+	KEY_7,
+	KEY_8,
+	KEY_9,
+	KEY_DECIMAL = '.',
+	KEY_DIVIDE = 0x2F,
+	KEY_MULTIPLY = '*',
+	KEY_SUBSTRACT = '-',
+	KEY_ADD = '+',
+	KEY_EQUAL = '=',
+	KEY_A = 'A',
+	KEY_B,
+	KEY_C,
+	KEY_D,
+	KEY_E,
+	KEY_F,
+	KEY_G,
+	KEY_H,
+	KEY_I,
+	KEY_J,
+	KEY_K,
+	KEY_L,
+	KEY_M,
+	KEY_N,
+	KEY_O,
+	KEY_P,
+	KEY_Q,
+	KEY_R,
+	KEY_S,
+	KEY_T,
+	KEY_U,
+	KEY_V,
+	KEY_W,
+	KEY_X,
+	KEY_Y,
+	KEY_Z,
+	// numeric pad
+	KEY_PAD_0 = 0x0080, // 128
+	KEY_PAD_1,
+	KEY_PAD_2, // 130
+	KEY_PAD_3,
+	KEY_PAD_4,
+	KEY_PAD_5,
+	KEY_PAD_6,
+	KEY_PAD_7, // 135
+	KEY_PAD_8,
+	KEY_PAD_9,
+	// navigation keys
+	KEY_HOME, // 138
+	KEY_END,
+	KEY_PAGEUP, // 140
+	KEY_PAGEDOWN,
+	KEY_LEFT,
+	KEY_RIGHT,
+	KEY_UP,
+	KEY_DOWN, // 145
+	// modifier keys
+	KEY_CTRL,
+	KEY_ALT,
+	KEY_SHIFT,
+	// action keys
+	KEY_BACKSPACE,
+	KEY_DELETE, // 150
+	KEY_INSERT,
+	KEY_ENTER,
+	KEY_ESCAPE,
+	KEY_HELP,
+	KEY_PRINT, // F13 (155)
+	KEY_BREAK, // F14
+	KEY_PAUSE, // F15
+	KEY_F1,
+	KEY_F2,
+	KEY_F3, // 160
+	KEY_F4,
+	KEY_F5,
+	KEY_F6,
+	KEY_F7,
+	KEY_F8, // 165
+	KEY_F9,
+	KEY_F10,
+	KEY_F11,
+	KEY_F12
+} PA_KeyCode;
 
 // --------------------------------------------------------------------------------
 // Plugin area properties blocks
@@ -213,7 +333,7 @@ typedef struct PA_ReadWriteBlock
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension Arrays 
+// 4D Application Arrays 
 // --------------------------------------------------------------------------------
 
 typedef struct PA_Array
@@ -224,7 +344,7 @@ typedef struct PA_Array
 } PA_Array;
 
 // --------------------------------------------------------------------------------
-// 4th Dimension Array Variable
+// 4D Application Array Variable
 // --------------------------------------------------------------------------------
 
 typedef struct PA_ArrayVariable
@@ -235,7 +355,7 @@ typedef struct PA_ArrayVariable
 } PA_ArrayVariable;
 
 // --------------------------------------------------------------------------------
-// 4th Dimension Dates 
+// 4D Application Dates 
 // --------------------------------------------------------------------------------
 
 typedef struct PA_Date
@@ -245,37 +365,9 @@ typedef struct PA_Date
 	short			fYear;
 } PA_Date;
 
-// --------------------------------------------------------------------------------
-// 4th Dimension text structure. text is stored in Macintosh characters
-// fSize can vary from 0 to 32000. if fSize is zero, fHandle can be also zero.
-// --------------------------------------------------------------------------------
-typedef struct PA_Text
-{
-	short			fSize;
-	PA_Handle		fHandle;
-} PA_Text;
 
 // --------------------------------------------------------------------------------
-// 4th Dimension Picture expression
-// --------------------------------------------------------------------------------
-typedef struct PA_Picture
-{
-	long			fSize;
-	PA_Handle		fHandle;
-} PA_Picture;
-
-
-typedef struct PA_PictureInfo	// these informations are used when
-								// the picture is displayed on background
-{
-	short			fVOffset;
-	short			fHOffset;
-	short			fMode;
-} PA_PictureInfo;
-
-
-// --------------------------------------------------------------------------------
-// 4th Dimension Blob expression 
+// 4D Application Blob expression 
 // --------------------------------------------------------------------------------
 typedef struct PA_Blob
 {
@@ -285,29 +377,8 @@ typedef struct PA_Blob
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension fixed length string variable.
-// Text is stored as a Pascal string using Macintosh characters.
+// 4D Application pointers
 // --------------------------------------------------------------------------------
-typedef struct PA_String
-{
-   short			fSize;			// as defined in C_STRING
-   char				fString[ 256 ];
-} PA_String;
-
-// --------------------------------------------------------------------------------
-// 4th Dimension fixed length string field.
-// Text is stored as a Pascal string using Macintosh characters.
-// --------------------------------------------------------------------------------
-typedef struct PA_StringField
-{
-   char				fString[ 82 ];
-} PA_StringField;
-
-
-// --------------------------------------------------------------------------------
-// 4th Dimension pointers
-// --------------------------------------------------------------------------------
-
 typedef enum
 {
 	ePK_InvalidPointer = -1,
@@ -315,7 +386,6 @@ typedef enum
 	ePK_PointerToTable,
 	ePK_PointerToField
 } PA_PointerKind;
-
 
 typedef struct PointerToVariable
 {
@@ -333,7 +403,6 @@ typedef struct PointerToTableField
 	short			fSubTables[5];
 } PointerToTableField;
 
-
 typedef struct PointerBlock
 {
 	char			fClass;			// 0 : field,   1 : variable
@@ -349,7 +418,7 @@ typedef PointerBlock* PA_Pointer;
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension Drag and Drop info
+// 4D Application Drag and Drop info
 // --------------------------------------------------------------------------------
 
 typedef enum
@@ -363,26 +432,27 @@ typedef enum
 
 typedef struct PA_DragAndDropInfo
 {
-	char	fReserved1[10];
-	long	fToArrayIndice;		// indice of element when destination is an array
-	long	fReserved2[2];
-	long	fFromArrayIndice;	// indice of element when source is an array
-	short	fFromProcess;
-	short	fFromWhereV;		// where user clicks at first
-	short	fFromWhereH;
-	short	fToWhereV;			// where user release mouse button
-	short	fToWhereH;
-	long	fReserved3;
-	char	fVariableName[32];	// empty string or variable name if user drags a variable
-	char	fInterProcess;
-	short 	fField;
-	short	fTable;				// zero or table name if user drags a field from a table
+	char				fReserved1[10];
+	long				fToArrayIndice;		// indice of element when destination is an array
+	long				fReserved2[2];
+	long				fFromArrayIndice;	// indice of element when source is an array
+	short				fFromProcess;
+	short				fFromWhereV;		// where user clicks at first
+	short				fFromWhereH;
+	short				fToWhereV;			// where user release mouse button
+	short				fToWhereH;
+	long				fReserved3;
+	char				fVariableName[32];	// empty string or variable name if user drags a variable
+	char				fInterProcess;
+	short 				fField;
+	short				fTable;				// zero or table name if user drags a field from a table
+	PA_DragContextRef	fDragContext;		// the current drag and drop context (new v11 field)
 } PA_DragAndDropInfo;
 
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension Variables
+// 4D Application Variables
 // --------------------------------------------------------------------------------
 
 typedef struct PA_Variable
@@ -390,81 +460,29 @@ typedef struct PA_Variable
    char				fType;
    char				fFiller;
    union
-   {
-      double			fReal;				// C_REAL variable
+   {  
+	  double			fReal;				// C_REAL variable
       PA_Date			fDate;				// C_DATE variable
       char				fBoolean;			// C_BOOLEAN variable
-      PA_Text			fText;				// C_TEXT variable
       PA_Picture		fPicture;			// C_PICTURE variable
 	  PA_Blob			fBlob;				// C_BLOB variable
       long				fLongint;			// C_LONGINT variable
       long				fTime;				// C_TIME variable
-      PA_String			fString;			// C_STRING variable
-	  PA_StringField	fStringField;		// STRING field
+	  PA_Unistring		fString;			// C_STRING and C_TEXT variables
       PA_Array			fArray;				// Any array
 	  PA_Pointer*		fPointer;			// C_POINTER variables
+	  unsigned char		fOperation;			// to pass '*', '<' or '>' to PA_ExecuterCommandByID
+	  struct
+	  {
+            short		fFieldNumber;		// to pass a field or table to PA_ExecuteCommandByID
+            short		fTableNumber;		// pass 0 to pass only a field
+			short		fUnused1;			// always set to zero
+	  } fTableFieldDefinition;
+	  char				fFiller[258];		// to ensure correct struct size
    } uValue;
 } PA_Variable;
 
 
-
-// --------------------------------------------------------------------------------
-// 4th Dimension logfile internal structure
-// --------------------------------------------------------------------------------
-
-// a logfile starts with this structure,
-// then is followed by the number of PA_LogTag
-// described in fNbOperations.
-typedef struct PA_LogHeader
-{
-	long			fNbOperations;
-	long			fLastFlush;
-	PA_long64		fLastAction;
-	PA_long64		fFirstAction;
-	long			fLogNumber;
-	long			fFiller;
-	long			fLastPos;
-} PA_LogHeader;
-
-
-#define kTagLog		0x4049999
-
-// each PA_LogTag is followed by its specific data.
-// the size of the logfile specific data is in fSize
-typedef struct PA_LogTag
-{
-	long			fTag;		// always set to kTagLog
-	long			fWhen;
-	char			fAction;	// as decribed in PA_LogAction enum
-	char			fFiller;
-	short			fProcess;
-	short			fUser;
-	long			fRecord;
-	short			fTable;
-	long			fSize;
-} PA_LogTag;
-
-
-
-typedef enum
-{
-    eLA_None = 0,
-    eLA_Append,
-    eLA_Delete,
-    eLA_Modify,
-    eLA_StartTransaction,
-    eLA_ValidateTransaction,
-    eLA_CancelTransaction,
-    eLA_OpenData,
-    eLA_CloseData,
-    eLA_StartFlushCache,
-    eLA_EndFlushCache,
-    eLA_AddField,
-    eLA_AddFile,
-    eLA_ChangeField,
-    eLA_AddIndex,
-    eLA_RemoveIndex
-} PA_LogAction;
 
 
 // --------------------------------------------------------------------------------
@@ -481,8 +499,122 @@ typedef enum
 {
 	eCS_Macintosh = 0,
 	eCS_Ansi,
-	eCS_Unicode
 } PA_CharSet;
+
+typedef enum PA_4DCharSet
+{
+	eVTC_UNKNOWN = 0,
+	eVTC_UTF_16_BIGENDIAN = 1,
+	eVTC_UTF_16_SMALLENDIAN = 2,
+	
+#if PA_BIGENDIAN
+	eVTC_UTF_16 = eVTC_UTF_16_BIGENDIAN,
+	eVTC_UTF_16_ByteSwapped = eVTC_UTF_16_SMALLENDIAN,
+#else
+	eVTC_UTF_16 = eVTC_UTF_16_SMALLENDIAN,
+	eVTC_UTF_16_ByteSwapped = eVTC_UTF_16_BIGENDIAN,
+#endif
+	
+	eVTC_UTF_32_BIGENDIAN = 3,
+	eVTC_UTF_32_SMALLENDIAN = 4,
+
+#if PA_BIGENDIAN
+	eVTC_UTF_32 = eVTC_UTF_32_BIGENDIAN,
+#else
+	eVTC_UTF_32 = eVTC_UTF_32_SMALLENDIAN,
+#endif
+
+	eVTC_UTF_32_RAW_BIGENDIAN = 5,
+	eVTC_UTF_32_RAW_SMALLENDIAN = 6,
+
+#if PA_BIGENDIAN
+	eVTC_UTF_32_RAW = eVTC_UTF_32_RAW_BIGENDIAN,
+	eVTC_UTF_32_RAW_ByteSwapped = eVTC_UTF_32_RAW_SMALLENDIAN,
+#else
+	eVTC_UTF_32_RAW = eVTC_UTF_32_RAW_SMALLENDIAN,
+	eVTC_UTF_32_RAW_ByteSwapped = eVTC_UTF_32_RAW_BIGENDIAN,
+#endif
+
+#if VERSIONMAC
+	eVTC_WCHAR_T = eVTC_UTF_32,
+#elif VERSIONWIN
+	eVTC_WCHAR_T = eVTC_UTF_16,
+#endif
+
+	eVTC_UTF_8 = 7,
+	eVTC_UTF_7 = 8,
+
+	// ASCII (7 bits)
+	eVTC_US_ASCII = 9,
+	eVTC_US_EBCDIC = 10,
+
+	eVTC_IBM437 = 11,
+	
+	// eVTC_MacOSAnsi & eVTC_Win32Ansi are the charsets used by non-unicode system apis.
+#if VERSIONMAC
+	eVTC_MacOSAnsi = -2,
+#elif VERSIONWIN
+	eVTC_Win32Ansi = -2,
+#endif
+
+	// the charset used by compilers for char* constants
+#if VERSIONMAC
+	eVTC_StdLib_char = eVTC_UTF_8,
+#elif VERSIONWIN
+	eVTC_StdLib_char = eVTC_Win32Ansi,
+#endif
+	
+	// Platform specific
+	eVTC_MAC_ROMAN	= 100,
+	eVTC_WIN_ROMAN,
+	eVTC_MAC_CENTRALEUROPE,
+	eVTC_WIN_CENTRALEUROPE,
+	eVTC_MAC_CYRILLIC,
+	eVTC_WIN_CYRILLIC,
+	eVTC_MAC_GREEK,
+	eVTC_WIN_GREEK,
+	eVTC_MAC_TURKISH,
+	eVTC_WIN_TURKISH,
+	eVTC_MAC_ARABIC,
+	eVTC_WIN_ARABIC,
+	eVTC_MAC_HEBREW,
+	eVTC_WIN_HEBREW,
+	eVTC_MAC_BALTIC,
+	eVTC_WIN_BALTIC,
+	eVTC_MAC_CHINESE_SIMP,
+	eVTC_WIN_CHINESE_SIMP,
+	eVTC_MAC_CHINESE_TRAD,
+	eVTC_WIN_CHINESE_TRAD,
+	// Internet set
+	eVTC_SHIFT_JIS	= 1000,	// Japan - Shift-JIS (Mac et Windows)
+	eVTC_JIS,			// Japan - JIS ou ISO-2022-JP (pour les e-mails)
+	eVTC_BIG5,			// Chinese (Traditional)
+	eVTC_EUC_KR,			// Corean
+	eVTC_KOI8R,			// Cyrillic
+	eVTC_ISO_8859_1,		// West Europe
+	eVTC_ISO_8859_2,		// Central Europe CP1250
+	eVTC_ISO_8859_3,		// 
+	eVTC_ISO_8859_4,		// Baltic
+	eVTC_ISO_8859_5,		// Cyrillic
+	eVTC_ISO_8859_6,		// Arab
+	eVTC_ISO_8859_7,		// Greek
+	eVTC_ISO_8859_8,		// Hebrew
+	eVTC_ISO_8859_9,		// Turkish
+	eVTC_ISO_8859_10,	// Nordic + Baltic (not available under Windows)
+	eVTC_ISO_8859_13,	// Baltic countries (not available under Windows)
+	eVTC_GB2312,			// Chinese (simplified)
+	eVTC_GB2312_80,		// Chinese (simplified)
+	eVTC_ISO_8859_15,	// ISO-Latin-9
+
+	eVTC_LastCharset,
+
+#if VERSIONMAC
+	eVTC_ODBC_DEFAULT = -2,
+#elif VERSIONWIN
+	eVTC_ODBC_DEFAULT = -2,
+#endif
+
+} PA_4DCharSet;
 
 
 // --------------------------------------------------------------------------------
@@ -500,16 +632,6 @@ typedef enum
 	eWL_Tip         = 9,
 	eWL_SuperDialog = 10
 } PA_WindowLevel;
-
-// --------------------------------------------------------------------------------
-// user kinds
-// --------------------------------------------------------------------------------
-
-typedef enum
-{
-	eUK_CreatedByDesigner = 0,
-	eUK_CreatedByAdministrator
-} PA_UserKind;
 
 
 // --------------------------------------------------------------------------------
@@ -539,7 +661,7 @@ typedef enum
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension field types
+// 4D Application field types
 // --------------------------------------------------------------------------------
 
 typedef enum
@@ -548,9 +670,7 @@ typedef enum
   eFK_AlphaField		= 0,	//  Alphanumeric field (from 2 to 80 characters)
   eFK_RealField			= 1,	//  Numeric field (Double or Extended value)
   eFK_TextField			= 2,	//  Text field (up to 32000 characters)
-  //MoB:ACI0041457  Let it be the same as eVK_Picture
-//  eFK_PictureField		= 3,	//  Picture field (virtually any block of data)
-  eFK_PictureField		= 10,	//  Picture field (virtually any block of data)
+  eFK_PictureField		= 3,	//  Picture field (virtually any block of data)
   eFK_DateField			= 4,	//  Date field 
   eFK_BooleanField		= 6,	//  Boolean field
   eFK_SubfileField		= 7,	//  Subfile field
@@ -562,113 +682,33 @@ typedef enum
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension field attributes
+// 4D Application field attributes
 // --------------------------------------------------------------------------------
-
-typedef struct PA_FieldAttributes
-{
-#if VERSIONMAC
-    unsigned short	fIndexed       : 1;
-    unsigned short	fUnique        : 1;
-    unsigned short	fMandatory     : 1;
-    unsigned short	fChoiceList    : 1;
-    unsigned short	fCanModify     : 1;
-    unsigned short	fEnterable     : 1;
-    unsigned short	fNeedToReindex : 1;
-    unsigned short	fInvisible     : 1;
-    unsigned short	fNeedToDelete  : 1;
-    unsigned short	fAutoRelateOne : 1;
-    unsigned short	fAutoOneToMany : 1;
-    unsigned short	fRelateToMany  : 1;
-    unsigned short	fIndexingInProgress        : 1;
-    unsigned short	fLeaveRelatedManyIntact    : 1;
-    unsigned short	fCannotDeleteIfRelatedMany : 1;
-    unsigned short	fAutoAssignRelatedValueInSubform :1;
-#elif VERSIONWIN
-    unsigned short	fAutoAssignRelatedValueInSubform :1;
-    unsigned short	fCannotDeleteIfRelatedMany : 1;
-    unsigned short	fLeaveRelatedManyIntact    : 1;
-    unsigned short	fIndexingInProgress        : 1;
-    unsigned short	fRelateToMany  : 1;
-    unsigned short	fAutoOneToMany : 1;
-    unsigned short	fAutoRelateOne : 1;
-    unsigned short	fNeedToDelete  : 1;
-    unsigned short	fInvisible     : 1;
-    unsigned short	fNeedToReindex : 1;
-    unsigned short	fEnterable     : 1;
-    unsigned short	fCanModify     : 1;
-    unsigned short	fChoiceList    : 1;
-    unsigned short	fMandatory     : 1;
-    unsigned short	fUnique        : 1;
-    unsigned short	fIndexed       : 1;
-#endif
-} PA_FieldAttributes;
-
-
-typedef struct PA_FieldAttributes2
-{
-#if VERSIONMAC
-	unsigned short fAutoWildCharSupport            : 1;
-	unsigned short fPromptIfRelatedOneDoesNotExist : 1;
-	unsigned short fFiller : 14;
-#elif VERSIONWIN
-	unsigned short fFiller : 14;
-	unsigned short fPromptIfRelatedOneDoesNotExist : 1;
-	unsigned short fAutoWildCharSupport            : 1;
-#endif
-} PA_FieldAttributes2;
-
-
-typedef struct PA_FieldBlock
-{
-	char				fName[32];
-	unsigned char		fKind;
-	short				fAlphaLength;
-	short				fNum;
-	short				fFieldCol;//(p.b) did not align properly with a critere
-	short				fRelatedTable;
-	short				fRelatedField;
-	short				fIndexReference;
-	short				fChoiceListReference;
-	PA_FieldAttributes	fAttributes;
-	short				fNumberOfSubfields;
-	short				fFiller1[4];
-	PA_FieldAttributes2	fAttributes2;
-	short				fWildCharChoiceField;
-	//char				fFiller2[4];
-	short fFiller2;//(p.b) did not align properly with a critere
-} PA_FieldBlock;
 
 typedef struct PA_MethodFlags
 {
-#if VERSIONMAC
-	unsigned  fInvisible : 1;
-	unsigned  f4DAction : 1;
-	unsigned  fSoap : 1;
-	unsigned  fWsdl : 1;
-#elif VERSIONWIN				
-	unsigned  fInvisible : 1;
-	unsigned  f4DAction : 1;
-	unsigned  fSoap : 1;
-	unsigned  fWsdl : 1;
-#endif
+	unsigned fInvisible : 1;	// Invisible
+	unsigned f4DAction : 1;	// Available through 4DACTION, 4DMETHOD and 4DSCRIPT
+	unsigned fSoap : 1;		// Offered as a Web Service
+	unsigned fWsdl : 1;		// Published in WSDL
+	unsigned fShared : 1;		// Shared by components and host database
+	unsigned fSQL : 1;			// Available through SQL
+	unsigned fUnused : 2;
 } PA_MethodFlags;
 
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension expression and variable types
+// 4D Application expression and variable types
 // --------------------------------------------------------------------------------
 
 typedef enum
 {														
-	eVK_StringField		= 0,	// Field of type ALPHA
 	eVK_Real			= 1,	// Variable declared using C_REAL
-	eVK_Text			= 2,	// Variable declared using C_TEXT
 	eVK_Date			= 4,	// Variable declared using C_DATE
 	eVK_Undefined		= 5,	// Undefined variable
 	eVK_Boolean			= 6,	// variable declared using C_BOOLEAN
-	eVK_Integer			= 8,	// variable declared using C_INTEGER :MoB:ACI0039488
+	eVK_Integer			= 8,	// variable declared using C_INTEGER
 	eVK_Longint			= 9,	// Variable declared using C_LONGINT
 	eVK_Picture			= 10,	// Variable declared using C_PICTURE
 	eVK_Time			= 11,	// Variable declared using C_TIME
@@ -677,18 +717,18 @@ typedef enum
 	eVK_ArrayInteger	= 15,	// One dimension array declared using ARRAY INTEGER
 	eVK_ArrayLongint	= 16,	// One dimension array declared using ARRAY LONGINT
 	eVK_ArrayDate		= 17,	// One dimension array declared using ARRAY DATE
-	eVK_ArrayText		= 18,	// One dimension array declared using ARRAY TEXT
 	eVK_ArrayPicture	= 19,	// One dimension array declared using ARRAY PICTURE
 	eVK_ArrayPointer	= 20,	// One dimension array declared using ARRAY POINTER
-	eVK_ArrayString		= 21,	// One dimension array declared using ARRAY STRING
 	eVK_ArrayBoolean	= 22,	// One dimension array declared using ARRAY BOOLEAN
 	eVK_Pointer			= 23,	// Variable declared using C_POINTER
-	eVK_String			= 24,	// Variable declared using C_STRING
-	eVK_Blob			= 30	// Variable declared using C_BLOB
+	eVK_Blob			= 30,	// Variable declared using C_BLOB
+	eVK_Unistring		= 33,	// Variable declared using C_STRING or C_TEXT
+	eVK_ArrayUnicode	= 34	// One Dimension array declared using ARRAY STRING or ARRAY TEXT
 } PA_VariableKind;
 
+
 // --------------------------------------------------------------------------------
-// 4th Dimension query and sort operators
+// 4D Application query and sort operators
 // --------------------------------------------------------------------------------
 
 // Values for the field fOperator of LineBlock data structure
@@ -718,7 +758,7 @@ typedef enum
 
 
 // --------------------------------------------------------------------------------
-// 4th Dimension errors codes
+// 4D Application errors codes
 // --------------------------------------------------------------------------------
 
 typedef enum
@@ -811,7 +851,9 @@ typedef enum
   eER_TooManyFields						= 4011,
   eER_NotAVariablePointer				= 4012,
   eER_InvalidMethodName 				= 4013,
-  eER_CouldNotCreateMethod 				= 4014
+  eER_CouldNotCreateMethod 				= 4014,
+  eER_CouldNotUpdateMethod 				= 4015
+
 
 } PA_ErrorCode;
 
@@ -825,10 +867,6 @@ typedef enum
 } PA_FolderKind;
 
 // reset struct alignment
-#if VERSIONWIN
-	#pragma pack(pop)
-#elif VERSIONMAC
-	#pragma options align = reset
-#endif
+#pragma pack(pop)
 
 #endif

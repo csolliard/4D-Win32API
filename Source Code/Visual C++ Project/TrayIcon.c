@@ -6,7 +6,7 @@
 #include "EntryPoints.h"
 
 
-extern long					sIsPriorTo67 = 0;
+extern LONG_PTR					sIsPriorTo67 = 0;
 extern char					debugStr[255];
 extern HANDLE				hSubclassMutex;  // MJG 3/26/04
 static pTI					startPtr;
@@ -41,21 +41,21 @@ extern struct		ACTIVECALLS
 //added 01/17/03 see 4DPlugin082102.c
 extern struct		TOOLBARRESTRICT
 {
-	long		toolBarOnDeck;
-	long		top;
-	long		left;
-	long		right;
-	long		bottom;
-	int			topProcessNbr;
-	int			leftProcessNbr;
-	int			rightProcessNbr;
-	int			bottomProcessNbr;
-	long		trackingRestriction;
-	long		appBeingMaxed;
-	long		appWindowState;
+	LONG_PTR		toolBarOnDeck;
+	LONG_PTR		top;
+	LONG_PTR		left;
+	LONG_PTR		right;
+	LONG_PTR		bottom;
+	INT_PTR			topProcessNbr;
+	INT_PTR			leftProcessNbr;
+	INT_PTR			rightProcessNbr;
+	INT_PTR			bottomProcessNbr;
+	LONG_PTR		trackingRestriction;
+	LONG_PTR		appBeingMaxed;
+	LONG_PTR		appWindowState;
 	RECT		origWindowRect;
-	long		clientOffsetx;
-	long		clientOffsety;
+	LONG_PTR		clientOffsetx;
+	LONG_PTR		clientOffsety;
 	char		minimizedWindows[SMLBUF][SMLBUF]; // REB 8/11/08 #16207 
 	RECT		previousWindowRect; // REB 3/26/10
 } toolBarRestrictions;
@@ -79,16 +79,16 @@ void gui_SetTrayIcon( PA_PluginParameters params )
 	UINT							iconHndl = 0;
 	NOTIFYICONDATA		nid;
 	PNOTIFYICONDATA		pnid;
-	long							returnValue = 0, iconID = 0, flags = 0, action = 0; 
+	LONG_PTR							returnValue = 0, iconID = 0, flags = 0, action = 0; 
 	char							szTipParam[60], szBalloonInfo[255], szBalloonTitle[60];
 	char							*pBalloonIconFlag;
-	long							arraySize = 0, procNbr = 0, storedProcNbr = 0, nbrParams = 0;
-	long							index;
-	long							errCode = 0;
+	LONG_PTR							arraySize = 0, procNbr = 0, storedProcNbr = 0, nbrParams = 0;
+	LONG_PTR							index;
+	LONG_PTR							errCode = 0;
 	BOOL							bFuncReturn = FALSE;
 	BOOL							shellOK = FALSE;
 	//HWND							hWnd;
-	long count = -10;
+	LONG_PTR count = -10;
 
 	activeCalls.bTrayIcons = TRUE;
 
@@ -219,14 +219,14 @@ void gui_SetTrayIcon( PA_PluginParameters params )
 	
 	//errCode = GetLastError();
 	//PA_ReturnLong( params, errCode );
-	PA_ReturnLong( params, (long)bFuncReturn );
+	PA_ReturnLong( params, (LONG_PTR)bFuncReturn );
 
 }
 
 
 
 // 
-//  FUNCTION: getTrayIconParams( PA_PluginParameters params, long *pAction, long *pFlags, long *pIconID, long *pProcessNbr, long *pIconHndl )
+//  FUNCTION: getTrayIconParams( PA_PluginParameters params, LONG_PTR *pAction, LONG_PTR *pFlags, LONG_PTR *pIconID, LONG_PTR *pProcessNbr, LONG_PTR *pIconHndl )
 //
 //  PURPOSE:	Gets parameters passed to plugin call and returns them via the pointers
 //
@@ -235,10 +235,10 @@ void gui_SetTrayIcon( PA_PluginParameters params )
 //	DATE:			dcc 08/17/01 
 // 
 
-long getTrayIconParams( PA_PluginParameters params, long *pAction, long *pFlags, long *pIconID, long *pProcessNbr,
-											 long *pIconHndl, char* szTipParam, char* szBalloonInfo, char* szBalloonTitle )
+LONG_PTR getTrayIconParams( PA_PluginParameters params, LONG_PTR *pAction, LONG_PTR *pFlags, LONG_PTR *pIconID, LONG_PTR *pProcessNbr,
+											 LONG_PTR *pIconHndl, char* szTipParam, char* szBalloonInfo, char* szBalloonTitle )
 {
-	long							szTipParam_len, szBalloonInfo_len, szBalloonTitle_len, returnValue = 0;
+	LONG_PTR							szTipParam_len, szBalloonInfo_len, szBalloonTitle_len, returnValue = 0;
 
 	*pAction     = PA_GetLongParameter( params, 1 );
 	if (*pAction != 0) returnValue++;
@@ -276,7 +276,7 @@ long getTrayIconParams( PA_PluginParameters params, long *pAction, long *pFlags,
 }
 
 
-//  FUNCTION: insertIcon ( pTI *pIcon, long iconID, long procNbr )
+//  FUNCTION: insertIcon ( pTI *pIcon, LONG_PTR iconID, LONG_PTR procNbr )
 //
 //  PURPOSE:	Inserts icon info into linked list
 //
@@ -284,7 +284,7 @@ long getTrayIconParams( PA_PluginParameters params, long *pAction, long *pFlags,
 //
 //	DATE:			dcc 09/09/01
 
-BOOL insertIcon( pTI *pIcon, long iconID, long procNbr )
+BOOL insertIcon( pTI *pIcon, LONG_PTR iconID, LONG_PTR procNbr )
 {
 	pTI			newPtr = NULL, previousPtr = NULL, currentPtr = NULL;
 
@@ -317,7 +317,7 @@ BOOL insertIcon( pTI *pIcon, long iconID, long procNbr )
 
 
 
-//  FUNCTION: findIconID ( pTI* pIcon, long iconID, long *pProcessNbr )
+//  FUNCTION: findIconID ( pTI* pIcon, LONG_PTR iconID, LONG_PTR *pProcessNbr )
 //
 //  PURPOSE:	Finds position of icon ID in linked list
 //
@@ -325,10 +325,10 @@ BOOL insertIcon( pTI *pIcon, long iconID, long procNbr )
 //
 //	DATE:			dcc 09/09/01
 
-long findIconID( pTI* pNewNode, long iconID, long *pProcessNbr )
+LONG_PTR findIconID( pTI* pNewNode, LONG_PTR iconID, LONG_PTR *pProcessNbr )
 {
 	pTI			previousPtr, currentPtr;
-	int			position = 0;
+	INT_PTR			position = 0;
 
 	if (!isEmpty(*pNewNode)) {
 		if (iconID == (*pNewNode)->iconID) {
@@ -351,7 +351,7 @@ long findIconID( pTI* pNewNode, long iconID, long *pProcessNbr )
 	return position;
 }
 
-//  FUNCTION: updateIconIdProcNbr ( pTI *pIcon, long iconID, long processNbr )
+//  FUNCTION: updateIconIdProcNbr ( pTI *pIcon, LONG_PTR iconID, LONG_PTR processNbr )
 //
 //  PURPOSE:	updates the process number associated with iconId
 //
@@ -359,10 +359,10 @@ long findIconID( pTI* pNewNode, long iconID, long *pProcessNbr )
 //
 //	DATE:			dcc 09/14/01
 
-long updateIconIdProcNbr( pTI *pIcon, long iconID, long processNbr )
+LONG_PTR updateIconIdProcNbr( pTI *pIcon, LONG_PTR iconID, LONG_PTR processNbr )
 {
 	pTI			previousPtr, currentPtr;
-	int			position = 0;
+	INT_PTR			position = 0;
 
 	if (!isEmpty(*pIcon)) {
 		if (iconID == (*pIcon)->iconID) {
@@ -387,7 +387,7 @@ long updateIconIdProcNbr( pTI *pIcon, long iconID, long processNbr )
 }
 
 
-//  FUNCTION: deleteIcon ( pTI *pIcon, long iconID )
+//  FUNCTION: deleteIcon ( pTI *pIcon, LONG_PTR iconID )
 //
 //  PURPOSE:	deletes a struct from memory
 //
@@ -395,10 +395,10 @@ long updateIconIdProcNbr( pTI *pIcon, long iconID, long processNbr )
 //
 //	DATE:			dcc 09/09/01
 
-long deleteIcon( pTI *pIcon, long iconID )
+LONG_PTR deleteIcon( pTI *pIcon, LONG_PTR iconID )
 {
 	pTI			previousPtr, currentPtr, tempPtr;
-	long		returnValue = 0;
+	LONG_PTR		returnValue = 0;
 
 	if (iconID == (*pIcon)->iconID) {//first node is to be deleted
 		if ( (*pIcon)->nextPtr == NULL ) {
@@ -445,7 +445,7 @@ long deleteIcon( pTI *pIcon, long iconID )
 //
 //	DATE:			dcc 09/09/01
 
-long isEmpty( pTI pIcon )
+LONG_PTR isEmpty( pTI pIcon )
 {
 
 	return (pIcon == NULL);
@@ -459,9 +459,9 @@ long isEmpty( pTI pIcon )
 //
 //	DATE:			dcc 09/09/01
 
-long sizeOfTI( pTI pIcon)
+LONG_PTR sizeOfTI( pTI pIcon)
 {
-	long			strSize = 0;
+	LONG_PTR			strSize = 0;
 	pTI				currentPtr;
 
 	if (!isEmpty(startPtr)) {
@@ -476,7 +476,7 @@ long sizeOfTI( pTI pIcon)
 	return strSize;
 }
 
-//  FUNCTION: readIconInfo( pTI *, long, long*, long*)
+//  FUNCTION: readIconInfo( pTI *, LONG_PTR, LONG_PTR*, LONG_PTR*)
 //
 //  PURPOSE:	Gets iconID and procNbr for given index nbr
 //
@@ -484,10 +484,10 @@ long sizeOfTI( pTI pIcon)
 //
 //	DATE:			dcc 09/10/01
 
-BOOL readIconInfo( pTI *pIcon, long index, long* pIconID, long* pProcNbr)
+BOOL readIconInfo( pTI *pIcon, LONG_PTR index, LONG_PTR* pIconID, LONG_PTR* pProcNbr)
 {
 	pTI			currentPtr;
-	int			i;
+	INT_PTR			i;
 
 
 	currentPtr = *pIcon;
@@ -519,7 +519,7 @@ VOID Delay(DWORD delayTime) // delay is in
 
 }
 
-//  FUNCTION: processWindowMessage(long source, long hwnd, WPARAM wParam, LPARAM lParam)
+//  FUNCTION: processWindowMessage(LONG_PTR source, LONG_PTR hwnd, WPARAM wParam, LPARAM lParam)
 //
 //  PURPOSE:	Communicates a value by setting a global (IP) 4D Var 
 //						via sending outside call to specific 4D process
@@ -532,10 +532,10 @@ VOID Delay(DWORD delayTime) // delay is in
 //
 
 
-void processWindowMessage(long source, long hwnd, WPARAM wParam, LPARAM lParam)
+void processWindowMessage(LONG_PTR source, LONG_PTR hwnd, WPARAM wParam, LPARAM lParam)
 {
 	char							procVar[30] = ST_TRAYNOTIFICATION;
-	long							procNbr = 0;
+	LONG_PTR							procNbr = 0;
 	PA_Variable						fourDVar;
 	BOOL							bFuncReturn;
 
@@ -553,12 +553,12 @@ void processWindowMessage(long source, long hwnd, WPARAM wParam, LPARAM lParam)
 				if (PA_GetVariableKind(fourDVar) == eVK_Longint) {
 					PA_SetLongintVariable(&fourDVar, lParam);
 					PA_SetVariable(procVar, fourDVar, 1);
-					findIconID( &startPtr, (long)wParam, &procNbr); // find icon id and get process number
+					findIconID( &startPtr, (LONG_PTR)wParam, &procNbr); // find icon id and get process number
 					PA_UpdateProcessVariable(procNbr); 
 				}
 			}else{
 				if((lParam==515)|(lParam==518)){
-					findIconID( &startPtr, (long)wParam, &procNbr); // find icon id and get process number
+					findIconID( &startPtr, (LONG_PTR)wParam, &procNbr); // find icon id and get process number
 					PA_UpdateProcessVariable(procNbr); 
 				};
 			};
@@ -629,7 +629,9 @@ BOOL restoreOrig4DWindowProcess()
 	//iterate thru activeCalls and if none are active restore process
 	//if ((!activeCalls.b4DMaximize) && (!activeCalls.bTrayIcons) && (!activeCalls.bPrinterCapture) && processHandles.wpFourDOrigProc != NULL) {
 	if(processHandles.wpFourDOrigProc != NULL) {  // MJG 3/26/04 Replaced if-statement.
-		SetWindowLong(windowHandles.fourDhWnd, GWL_WNDPROC, (LONG) processHandles.wpFourDOrigProc);
+		//REB 3/18/11 #25290
+		SetWindowLongPtr(windowHandles.fourDhWnd, GWLP_WNDPROC, (LONG_PTR) processHandles.wpFourDOrigProc);
+		//SetWindowLong(windowHandles.fourDhWnd, GWL_WNDPROC, (LONG) processHandles.wpFourDOrigProc);
 		processHandles.wpFourDOrigProc = NULL;
 		return TRUE;
 	}
@@ -657,7 +659,9 @@ VOID subclass4DWindowProcess()
 		 if (waitResult == WAIT_OBJECT_0) {
 			
 			 if(processHandles.wpFourDOrigProc == NULL){
-				processHandles.wpFourDOrigProc = (WNDPROC) SetWindowLong(windowHandles.fourDhWnd, GWL_WNDPROC, (LONG) newProc);
+			    //REB 3/18/11 #25290
+				processHandles.wpFourDOrigProc = (WNDPROC) SetWindowLongPtr(windowHandles.fourDhWnd, GWLP_WNDPROC, (LONG_PTR) newProc);
+				//processHandles.wpFourDOrigProc = (WNDPROC) SetWindowLong(windowHandles.fourDhWnd, GWL_WNDPROC, (LONG) newProc);
 			 }
 
 			ReleaseMutex(hSubclassMutex);

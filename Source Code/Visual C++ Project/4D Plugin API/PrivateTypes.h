@@ -6,7 +6,7 @@
 // Description : This file stores all the internal structures
 //				 used by 4D Plugin API and useless for API user.
 //
-// rev : 2004.7
+// rev : v12.0
 //
 // ---------------------------------------------------------------
 
@@ -18,13 +18,8 @@
 extern "C" {
 #endif
 
-
-// all the 4th Dimension structures use 2 bytes alignment
-#if VERSIONWIN
-	#pragma pack(push,2)
-#elif VERSIONMAC
-	#pragma options align = mac68k
-#endif
+// all the 4D Application internal structures use 2 bytes alignment
+#pragma pack(push,2)
 
 // used for query operations.
 typedef struct LineBlock
@@ -35,22 +30,33 @@ typedef struct LineBlock
 	char				fComparison;
 	union
 	{
-		char				fString[41];
+		char				fString[42];
 		double				fReal;			
 		PA_Date				fDate;
 		long				fLongint;
 		short				fInteger;
 		char				fBoolean;
+		PA_Unichar*			fUnichars;
 	} uValue;
 } LineBlock;
 
-
 	
-// This structure is always sent when calling back 4th Dimension.
+// This structure is always sent when calling back 4D Application.
 // the different fields are used depending the kind of
 // the action required.
 typedef struct EngineBlock
 {
+// New v11 fields for Unicode support
+	PA_Unichar			fUName[256];
+	PA_Unichar			fUString[256];
+	PA_Unistring		fUniString1;
+	PA_Unistring		fUniString2;
+	PA_Picture			fPicture;
+	void*				fPtr1;
+	void*				fPtr2;
+	void*				fPtr3;
+// all the following records are identical
+// to the EngineBlock of 4D 2004
 	short				fTable;
 	short				fField;
 	long				fRecord;
@@ -59,17 +65,18 @@ typedef struct EngineBlock
 	char				fName[256];
 	PA_Handle			fHandle;
 	short				fError;
-	long				fParam1;
-	long				fParam2;
-	long				fParam3;
-	long				fParam4;
+	sLONG_PTR			fParam1;
+	sLONG_PTR			fParam2;
+	sLONG_PTR			fParam3;
+	sLONG_PTR			fParam4;
 	double				fReal;	
 	short				fFiller;
 	PA_Date				fDate;
 	long				fLongint;			
 	short				fShort;		
 	char				fString[82];		
-	PA_Text				fText;		
+	short				fTextSize;
+	PA_Handle			fTextHandle;
 	char				fClearOldVariable;
 	char				fNativeReal;
 	short				fNbSearchLines;
@@ -79,7 +86,7 @@ typedef struct EngineBlock
 #define Call4D(s,p) (*gCall4D)(s,p)
 
 #if VERSIONMAC
-	#define FOURDCALL pascal void
+	#define FOURDCALL pascal __attribute__((visibility("default"))) void
 #elif VERSIONWIN
 	#define FOURDCALL void __stdcall
 #endif
@@ -89,8 +96,8 @@ typedef struct EngineBlock
 #elif VERSIONWIN
 	typedef void (__stdcall *Call4DProcPtr)( short, EngineBlock* );
 #endif
-	
-FOURDCALL FourDPack( long selector, void* params, void** data, void* result );
+
+FOURDCALL FourDPackex( long selector, void* params, void** data, void* result );
 
 extern Call4DProcPtr gCall4D;
 
@@ -102,15 +109,11 @@ typedef struct PackInitBlock
 	long			fCPUType;
 	Call4DProcPtr	fCall4D;
  	long			fSupportedVersion;
+	Call4DProcPtr	fCall4Dex;
 } PackInitBlock;
 
-
 // reset struct alignment
-#if VERSIONWIN
-	#pragma pack(pop)
-#elif VERSIONMAC
-	#pragma options align = reset
-#endif
+#pragma pack(pop)
 
 #ifdef __cplusplus
 }

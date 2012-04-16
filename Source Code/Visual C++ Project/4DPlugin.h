@@ -9,6 +9,7 @@
  #  
  # --------------------------------------------------------------------------------*/
 
+
 #ifndef _WIN32_IE
 #define _WIN32_IE 0x0500
 #endif
@@ -59,7 +60,7 @@ void sys_GetGUID( PA_PluginParameters params ); //added 7/30/01
 void gui_FlashWindow( PA_PluginParameters params ); //added 08/04/01 filled unused case (10)
 void sys_GetRoutes ( PA_PluginParameters params ); //added 08/08/01
 void sys_GetNetworkInfo( PA_PluginParameters params ); //added 08/09/01
-long sys_GetOSVersion( BOOL bInternalCall, PA_PluginParameters params ); //added as plugin call 0828/01 was internal only
+LONG_PTR sys_GetOSVersion( BOOL bInternalCall, PA_PluginParameters params ); //added as plugin call 0828/01 was internal only
 void sys_PlayWav( PA_PluginParameters params ); //add 10/16/01
 void sys_GetWindowMetrics( PA_PluginParameters params ); // added 11/09/01
 void gui_LoadBackground( PA_PluginParameters params, BOOL DeInit ); // added 11/09/01
@@ -116,7 +117,7 @@ void gui_MinimizeMDI (PA_PluginParameters params); // REB 1/8/10 #22389
 void gui_RestoreMDI (PA_PluginParameters params); // REB 1/8/10 #22389
 void sys_DisableTaskManager (PA_PluginParameters params); // REB 1/8/10 #22389
 void sys_EnableTaskManager (PA_PluginParameters params); // REB 1/8/10 #22389
-void sys_SetRegKey( PA_PluginParameters params, long selector ); // REB 11/17/10 #25402
+void sys_SetRegKey( PA_PluginParameters params, LONG_PTR selector ); // REB 11/17/10 #25402
 void sys_IsAppRunningAsService( PA_PluginParameters params ); // REB 1/12/11 #25587
 
 // ----- Other modules -------
@@ -127,19 +128,19 @@ LRESULT APIENTRY BkgrndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 //print job-related 
 LRESULT APIENTRY newProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // added 10/24/01
 LRESULT APIENTRY newPrtSettingsDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // added 10/24/01
-LRESULT CALLBACK printSettingsDlgHook( int hCode, WPARAM wParam, LPARAM lParam); //added 10/24/01
+LRESULT CALLBACK printSettingsDlgHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam); //added 10/24/01
 BOOL CALLBACK EnumChildProc2(HWND hWnd, LPARAM lParam); //added 10/24/01
 LRESULT APIENTRY newPrtDlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam); // added 10/24/01
-LRESULT CALLBACK printDlgHook( int hCode, WPARAM wParam, LPARAM lParam); //added 10/24/01
-LRESULT CALLBACK keyboardLLHook(int code, WPARAM wParam, LPARAM lParam); // REB 1/8/10 #22389
+LRESULT CALLBACK printDlgHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam); //added 10/24/01
+LRESULT CALLBACK keyboardLLHook(INT_PTR code, WPARAM wParam, LPARAM lParam); // REB 1/8/10 #22389
 
 //file open/save-related
 BOOL CALLBACK ComDlg32DlgProc (HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam); // added 7/27/01
-LRESULT CALLBACK theHook( int hCode, WPARAM wparam, LPARAM lParam); //added 07/27/01
+LRESULT CALLBACK theHook( INT_PTR hCode, WPARAM wparam, LPARAM lParam); //added 07/27/01
 BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam); //added 07/27/01
 BOOL NEAR PASCAL TestNotify(HWND hDlg, LPOFNOTIFY pofn);
 void ProcessCDError(DWORD dwErrorCode, HWND hWnd);
-LRESULT CALLBACK postHook( int hCode, WPARAM wParam, LPARAM lParam); //added 07/30/01
+LRESULT CALLBACK postHook( INT_PTR hCode, WPARAM wParam, LPARAM lParam); //added 07/30/01
 
 void GetPlugInFullName( char *PlugInFullName); // added 07/27/01
 void FormatIP(char *str, LPARAM dwIP); // added 08/09/01
@@ -148,37 +149,37 @@ HWND getWindowHandle(char* windowTitle, HWND wHnd);
 
 DWORD GetDllVersion( LPCTSTR lpszDllName ); //added 12/08/01
 
-LRESULT CALLBACK GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam); //added 12/08/01
+LRESULT CALLBACK GetMsgProc(INT_PTR nCode, WPARAM wParam, LPARAM lParam); //added 12/08/01
 LRESULT APIENTRY ProToolsProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam ); //added 07/15/02
 
 
 VOID createNewProcess( VOID); // added 12/17/01
 
 //tray icon related
-long getTrayIconParams( PA_PluginParameters params, long *pAction, long *pFlags, long *pIconID, long *pProcessNbr,
-											 long *pIconHndl, char* szTipParam, char* szBalloonInfo, char* szBalloonTitle );
-long findIconID( pTI *, long iconID, long *pProcNbr );
-long deleteIcon( pTI *, long iconID );
-BOOL insertIcon( pTI *, long iconID, long procNbr );
-BOOL readIconInfo( pTI *, long, long*, long*);
-long updateIconIdProcNbr( pTI *pIcon, long iconID, long processNbr );
-long sizeOfTI(pTI);
-long isEmpty(pTI);
+LONG_PTR getTrayIconParams( PA_PluginParameters params, LONG_PTR *pAction, LONG_PTR *pFlags, LONG_PTR *pIconID, LONG_PTR *pProcessNbr,
+											 LONG_PTR *pIconHndl, char* szTipParam, char* szBalloonInfo, char* szBalloonTitle );
+LONG_PTR findIconID( pTI *, LONG_PTR iconID, LONG_PTR *pProcNbr );
+LONG_PTR deleteIcon( pTI *, LONG_PTR iconID );
+BOOL insertIcon( pTI *, LONG_PTR iconID, LONG_PTR procNbr );
+BOOL readIconInfo( pTI *, LONG_PTR, LONG_PTR*, LONG_PTR*);
+LONG_PTR updateIconIdProcNbr( pTI *pIcon, LONG_PTR iconID, LONG_PTR processNbr );
+LONG_PTR sizeOfTI(pTI);
+LONG_PTR isEmpty(pTI);
 VOID Delay(DWORD delayTime);
-void processWindowMessage(long source, long hwnd, WPARAM wParam, LPARAM lParam); // added 1st param 01/22/03, chgd 2nd to long from HWND
+void processWindowMessage(LONG_PTR source, LONG_PTR hwnd, WPARAM wParam, LPARAM lParam); // added 1st param 01/22/03, chgd 2nd to LONG_PTR from HWND
 
 BOOL checkTimeProvider( void ); // added 01/04/02
 
-long enumPrintersUsingRegistry( PA_Variable *printerArray ); // added 04/20/02
-long enumPrintersUsingINI( PA_Variable *printerArray ); // added 04/20/02
+LONG_PTR enumPrintersUsingRegistry( PA_Variable *printerArray ); // added 04/20/02
+LONG_PTR enumPrintersUsingINI( PA_Variable *printerArray ); // added 04/20/02
 
 // linked list related (this is an unordered list)
 void  init_list (pLL* pStartOfList);
 void  clear_list(pLL* pStartOfList);
-BOOL  search_list(pLL* pSOL, pLL *thisLink, pLL *previousLink, long dataPosition, long matchType, long* pSearchKey); 
+BOOL  search_list(pLL* pSOL, pLL *thisLink, pLL *previousLink, LONG_PTR dataPosition, LONG_PTR matchType, LONG_PTR* pSearchKey); 
 void* insert_list(pLL* pSOL);
-BOOL  delete_list(pLL* pSOL, long dataPosition, long matchType, long* pSearchKey);
-long  length_list(pLL pStartOfList);
+BOOL  delete_list(pLL* pSOL, LONG_PTR dataPosition, LONG_PTR matchType, LONG_PTR* pSearchKey);
+LONG_PTR  length_list(pLL pStartOfList);
 
 HINSTANCE getPSapiPointers(LPFNENUMPROC *ppEnumProc,	LPFNENUMPROCMODS *ppEnumProcMods,	LPFNGETMODFNAME *ppGetModFName);
 
@@ -190,9 +191,9 @@ BOOL restoreOrig4DWindowProcess(); //added 01/21/03
 VOID subclass4DWindowProcess(); // MJG 3/26/04 
 
 // registry related
-HKEY getRootKey(int key);
-int get4dRegType(int key);
-long regGetNumElements(char *pValue);
+HKEY getRootKey(INT_PTR key);
+INT_PTR get4dRegType(INT_PTR key);
+LONG_PTR regGetNumElements(char *pValue);
 void regExpandStr(char **pValue);
 
 // Callback for Clean process termination
