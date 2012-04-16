@@ -1,3 +1,0 @@
-To use this stub on a Mac, you'll need to transport the file using 4D Transporter or the freeware ResTransporter (http://www.softrobots.de/dimension/restransporter/index.html). Then use a resource editor to set the file type to 4DCB in order for 4D to recognize and tokenize the commands of the plug-in.
-
-To use this stub on a Windows server, no modifications are needed. Just copy the .4cx and .rsr files into your Mac4DX directory.
