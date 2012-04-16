@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Win32API", "Win32API.vcproj", "{C9554EBF-34F1-4440-AB15-9EC5D9CD8A6D}"
+EndProject
+Global
+	GlobalSection(SourceCodeControl) = preSolution
+		SccNumberOfProjects = 1
+		SccProjectUniqueName0 = Win32API.vcproj
+		SccProjectName0 = \u0022$/Projects/Plugins/Win32API/Source\u0022,\u0020MBGAAAAA
+		SccLocalPath0 = .
+		SccProvider0 = MSSCCI:Microsoft\u0020Visual\u0020SourceSafe
+		CanCheckoutShared = false
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C9554EBF-34F1-4440-AB15-9EC5D9CD8A6D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C9554EBF-34F1-4440-AB15-9EC5D9CD8A6D}.Debug|Win32.Build.0 = Debug|Win32
+		{C9554EBF-34F1-4440-AB15-9EC5D9CD8A6D}.Release|Win32.ActiveCfg = Release|Win32
+		{C9554EBF-34F1-4440-AB15-9EC5D9CD8A6D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
