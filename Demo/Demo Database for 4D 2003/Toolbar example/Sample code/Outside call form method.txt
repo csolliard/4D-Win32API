@@ -1,0 +1,22 @@
+  ` This form method belongs to the toolbar form that
+  ` stretches across the top of the MDI window. It receives
+  ` notifications that the MDI window has been resized.
+
+Case of 
+  : (Form event=On Outside Call )
+    
+    If (Size of array(<>TB_NOTIFICATION)>=4)
+      
+        ` This is a "top" toolbar, so we need to check
+        ` position 2 of the array (1=l, 2=t, 3=r, 4=b)
+      If (<>TB_NOTIFICATION{2}>0)  ` Top toolbar
+          ` do something here if you need to,
+          ` probably more useful than beeping!
+        BEEP
+        <>TB_NOTIFICATION{2}:=0
+      End if 
+      
+    End if 
+    
+End case 
+

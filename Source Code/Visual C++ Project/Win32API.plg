@@ -1,0 +1,62 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Win32API - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\Temp\RSP3852.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /I "4D Plugin API" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "MY4DPLUGIN_EXPORTS" /FR"Objs/Release/" /Fo"Objs/Release/" /Fd"Objs/Release/" /FD /c 
+"C:\Documents and Settings\mdemougin\My Documents\Orchard Projects\SSWorking\Win32Api\Source\4DPlugin040202.c"
+"C:\Documents and Settings\mdemougin\My Documents\Orchard Projects\SSWorking\Win32Api\Source\4DPlugin082102.c"
+]
+Creating command line "cl.exe @C:\Temp\RSP3852.tmp" 
+Creating temporary file "C:\Temp\RSP3853.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib rpcrt4.lib IphlpApi.lib ppc_h\asintppc.lib Winmm.lib Comctl32.lib Wininet.lib IphlpApi.lib /nologo /dll /incremental:no /pdb:"Objs/Release/Win32API.pdb" /machine:I386 /def:".\4D Plugin API\4DPluginAPI.def" /out:"WIN4DX/Win32API.4DX" /implib:"Objs/Release/Win32API.lib" 
+".\Objs\Release\sys_GetDocumentList.obj"
+".\Objs\Release\4DPlugin.obj"
+".\Objs\Release\4DPlugin040202.obj"
+".\Objs\Release\4DPlugin082102.obj"
+".\Objs\Release\4DPlugin2.obj"
+".\Objs\Release\linkedList.obj"
+".\Objs\Release\Registry.obj"
+".\Objs\Release\TrayIcon.obj"
+".\Objs\Release\Utilities.obj"
+".\Objs\Release\4DPluginAPI.obj"
+".\Objs\Release\COMDLG32.res"
+]
+Creating command line "link.exe @C:\Temp\RSP3853.tmp"
+<h3>Output Window</h3>
+Compiling...
+4DPlugin040202.c
+4DPlugin082102.c
+Generating Code...
+Linking...
+   Creating library Objs/Release/Win32API.lib and object Objs/Release/Win32API.exp
+Creating temporary file "C:\Temp\RSP3857.tmp" with contents
+[
+/nologo /o"Objs/Release/Win32API.bsc" 
+".\Objs\Release\sys_GetDocumentList.sbr"
+".\Objs\Release\4DPlugin.sbr"
+".\Objs\Release\4DPlugin040202.sbr"
+".\Objs\Release\4DPlugin082102.sbr"
+".\Objs\Release\4DPlugin2.sbr"
+".\Objs\Release\linkedList.sbr"
+".\Objs\Release\Registry.sbr"
+".\Objs\Release\TrayIcon.sbr"
+".\Objs\Release\Utilities.sbr"
+".\Objs\Release\4DPluginAPI.sbr"]
+Creating command line "bscmake.exe @C:\Temp\RSP3857.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+Win32API.4DX - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
