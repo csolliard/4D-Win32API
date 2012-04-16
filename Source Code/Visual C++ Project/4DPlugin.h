@@ -116,6 +116,8 @@ void gui_MinimizeMDI (PA_PluginParameters params); // REB 1/8/10 #22389
 void gui_RestoreMDI (PA_PluginParameters params); // REB 1/8/10 #22389
 void sys_DisableTaskManager (PA_PluginParameters params); // REB 1/8/10 #22389
 void sys_EnableTaskManager (PA_PluginParameters params); // REB 1/8/10 #22389
+void sys_SetRegKey( PA_PluginParameters params, long selector ); // REB 11/17/10 #25402
+void sys_IsAppRunningAsService( PA_PluginParameters params ); // REB 1/12/11 #25587
 
 // ----- Other modules -------
 //window background-related

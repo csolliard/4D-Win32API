@@ -32,7 +32,7 @@ static struct message_list message_list_english = {
 	"DDE Transaction Could Not be Completed",			// DDEFail
 	"DDE Request Timed Out",							// DDETimeOut
 	"DLL Libray Not Found",								// DLLNotFound
-	"No Application Associated with File Extenstion",	// NoAssoc
+	"No Application Associated with File Extension",	// NoAssoc
 	"Insufficient Memory",								// OOM
 	"Sharing Violation Occurred",						// ShareViolation
 	"Unknown error occurred"							// Default

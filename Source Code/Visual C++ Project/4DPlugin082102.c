@@ -849,7 +849,7 @@ void sys_GetRegKey( PA_PluginParameters params )
 
 // ------------------------------------------------
 // 
-//  FUNCTION: sys_GetRegKey( PA_PluginParameters params )
+//  FUNCTION: sys_GetRegType( PA_PluginParameters params )
 //
 //  PURPOSE:  Get a key from the registry.
 //        

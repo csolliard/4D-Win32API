@@ -559,6 +559,17 @@ void PluginMain( long selector, PA_PluginParameters params )
 		case 89:
 			sys_EnableTaskManager (params); // REB 1/8/10 #22389
 			break;
+
+		case 90:
+		case 91:
+		case 92:
+		case 93:
+			sys_SetRegKey( params, selector ); // REB 11/17/10 #25402
+			break;
+
+		case 94:
+			sys_IsAppRunningAsService( params ); // REB 1/12/11 #25587
+			break;
 	}
 }
 
@@ -4018,6 +4029,225 @@ void sys_EnableTaskManager (PA_PluginParameters params)
 }
 
 
+// ------------------------------------------------
+// 
+//  FUNCTION: sys_SetRegKey( PA_PluginParameters params, long selector )
+//
+//  PURPOSE:  Set a registry key value.
+//        
+//	DATE:	  REB 11/17/10 #25402
+//
+void sys_SetRegKey( PA_PluginParameters params, long selector )
+{
+	long returnValue, regKey, retErr, dataSize, arraySize, value, expandDataSize, keyState;
+	long i, len;
+	char regSub[MAXBUF];
+	char regName[MAXBUF];
+	char *newDataBuffer = NULL, *element = NULL, *pos = NULL;
+	HKEY hRootKey;
+	HKEY hOpenKey;
+	DWORD dwDataType;
+	PA_Variable	paReturnArray;
+
+	returnValue = regKey = retErr = arraySize = expandDataSize = 0;
+	hRootKey = hOpenKey = 0;
+	newDataBuffer = NULL;
+	memset(regSub, 0, MAXBUF);
+	memset(regName, 0, MAXBUF);
+
+	// Get the function parameters.
+	regKey = PA_GetLongParameter( params, 1 );
+	PA_GetTextParameter( params, 2, regSub );
+	PA_GetTextParameter( params, 3, regName );
+
+	// Convert the 4d registry constant into a Windows registry key.
+	hRootKey = getRootKey( regKey );
+
+	// Open the registry key.
+	retErr = RegOpenKeyEx(hRootKey, regSub, 0, KEY_ALL_ACCESS, &hOpenKey);
+	
+	// If the key does not exist create it now.
+	if(retErr == ERROR_FILE_NOT_FOUND){
+		retErr = RegCreateKeyEx(hRootKey, regSub, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hOpenKey, &keyState);
+	}
+
+	if(retErr == ERROR_SUCCESS){
+
+		// Get the value type from the registry.
+		retErr = RegQueryValueEx(hOpenKey, regName, NULL, &dwDataType, NULL, &dataSize);
+
+		// If the value was not found we'll need to determine the type based on the value passed in.
+		if(retErr == ERROR_FILE_NOT_FOUND){
+
+			switch(selector){                      
+
+				case 90:
+					dwDataType = REG_SZ;
+					retErr = ERROR_SUCCESS;
+					break;
+
+				case 91:
+					dwDataType = REG_DWORD;
+					retErr = ERROR_SUCCESS;
+					break;
+
+				case 92:
+					dwDataType = REG_MULTI_SZ;
+					retErr = ERROR_SUCCESS;
+					break;
+
+				case 93:
+					dwDataType = REG_BINARY;
+					retErr = ERROR_SUCCESS;
+					break;
+			}
+		}
+
+		if(retErr == ERROR_SUCCESS){
+		
+			switch(dwDataType){
+				case REG_BINARY:
+					len = PA_GetBlobParameter( params, 4, NULL);
+					newDataBuffer = malloc(len);
+					len = PA_GetBlobParameter( params, 4, newDataBuffer);
+
+					retErr = RegSetValueEx(hOpenKey, regName, NULL, dwDataType, newDataBuffer, len);
+
+					free(newDataBuffer);
+
+					if(retErr == ERROR_SUCCESS){
+						returnValue = 1;
+					}else{
+						returnValue = retErr * -1;
+					}
+
+
+					break;
+
+			case REG_DWORD:
+			case REG_DWORD_BIG_ENDIAN:
+				value = PA_GetLongParameter( params, 4);
+				retErr = RegSetValueEx(hOpenKey, regName, NULL, dwDataType, &value, sizeof(value));
+
+				if(retErr == ERROR_SUCCESS){
+					returnValue = 1;
+				}else{
+					returnValue = retErr * -1;
+				}
+
+				break;
+	
+
+			case REG_MULTI_SZ:
+
+				paReturnArray = PA_GetVariableParameter( params, 4 );
+
+				if( paReturnArray.uValue.fArray.fNbElements > 0){
+					//Convert the 4D array into a null delimited string to be stored
+					for(i=1; i <= paReturnArray.uValue.fArray.fNbElements; i++)
+					{
+						arraySize += PA_GetTextInArray(paReturnArray, i, NULL) + 1 ;
+					}
+
+					newDataBuffer = malloc(arraySize+1);
+					memset(newDataBuffer, 0, arraySize+1);
+					pos = newDataBuffer;
+					for(i=1; i <= paReturnArray.uValue.fArray.fNbElements; i++)
+					{
+						len = PA_GetTextInArray(paReturnArray, i, NULL);
+						element = malloc(len + 1);
+						len = PA_GetTextInArray(paReturnArray, i, element);
+						element[len] = '\0';
+							
+						memcpy(pos, element, len+1);
+						pos += len + 1;
+
+						free(element);		
+
+					}
+
+					retErr = RegSetValueEx(hOpenKey, regName, NULL, dwDataType, newDataBuffer, arraySize+1);
+					free(newDataBuffer);
+				}
+
+				if(retErr == ERROR_SUCCESS){
+					returnValue = 1;
+				}else{
+					returnValue = retErr * -1;
+				}
+
+				break;
+
+			case REG_EXPAND_SZ:
+			case REG_SZ:
+
+				len = PA_GetTextParameter( params, 4, NULL);
+				newDataBuffer = malloc(len);
+				len = PA_GetTextParameter( params, 4, newDataBuffer);
+				newDataBuffer[len] = '\0';
+
+				retErr = RegSetValueEx(hOpenKey, regName, NULL, dwDataType, newDataBuffer, len);
+
+				if(retErr == ERROR_SUCCESS){
+					returnValue = 1;
+				}else{
+					returnValue = retErr * -1;
+				}
+
+				break;
+			} 
+		}
+	}
+
+	RegCloseKey( hOpenKey );
+	PA_ReturnLong( params, returnValue );
+}
+
+
+
+
+
+
+// ------------------------------------------------
+// 
+//  FUNCTION: sys_IsAppRunningAsService( PA_PluginParameters params, long selector )
+//
+//  PURPOSE:  Determine if the application is running as a service.
+//        
+//	DATE:	  REB 1/12/11 #25587, contributed by Justin Carr
+//
+void sys_IsAppRunningAsService( PA_PluginParameters params )
+{
+	short serviceInd = 0;	
+	SID_IDENTIFIER_AUTHORITY siaNt = SECURITY_NT_AUTHORITY; 
+	PSID pServiceSid = NULL; 
+	PSID pLocalSystemSid = NULL; 
+	BOOL bHasServiceSid; 
+	BOOL bHasLocalSystemSid; 
+
+	if ( AllocateAndInitializeSid( &siaNt, 1, SECURITY_SERVICE_RID, 0, 0, 0, 0, 0, 0, 0, &pServiceSid ) ){
+		if ( CheckTokenMembership( NULL, pServiceSid, &bHasServiceSid ) ) { 
+			if ( bHasServiceSid ) {
+				serviceInd = 1; 
+			} else if ( AllocateAndInitializeSid( &siaNt, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pLocalSystemSid ) ) { 
+				if ( CheckTokenMembership( NULL, pLocalSystemSid, &bHasLocalSystemSid ) ) { 
+					if ( bHasLocalSystemSid ) { 
+						serviceInd = 1; 
+					} 
+				} 
+			} 
+		} 
+	} 
+
+   if ( pLocalSystemSid ) 
+     FreeSid( pLocalSystemSid ); 
+
+   if ( pServiceSid ) 
+     FreeSid( pServiceSid ); 
+
+   PA_ReturnShort( params, serviceInd ); 
+
+}
 
 //----------------------------------------------------------------------
 //
